@@ -10,11 +10,6 @@ type PGSQLProvider struct {
 	dbHandle *sqlx.DB
 }
 
-func (P *PGSQLProvider) Connect() error {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (P *PGSQLProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")
@@ -50,7 +45,7 @@ func (P *PGSQLProvider) RevertDatabase(targetVersion int) error {
 	panic("implement me")
 }
 
-func (P *PGSQLProvider) resetDatabase() error {
+func (P *PGSQLProvider) ResetDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }

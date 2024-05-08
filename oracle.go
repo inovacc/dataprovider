@@ -10,11 +10,6 @@ type ORASQLProvider struct {
 	dbHandle *sqlx.DB
 }
 
-func (o *ORASQLProvider) Connect() error {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (o *ORASQLProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")
@@ -50,7 +45,7 @@ func (o *ORASQLProvider) RevertDatabase(targetVersion int) error {
 	panic("implement me")
 }
 
-func (o *ORASQLProvider) resetDatabase() error {
+func (o *ORASQLProvider) ResetDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }

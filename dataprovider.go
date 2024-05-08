@@ -37,9 +37,6 @@ const (
 var provider Provider
 
 type Provider interface {
-	// Connect connects to the data provider
-	Connect() error
-
 	// Disconnect disconnects from the data provider
 	Disconnect() error
 
@@ -62,7 +59,7 @@ type Provider interface {
 	RevertDatabase(targetVersion int) error
 
 	// ResetDatabase resets the database
-	resetDatabase() error
+	ResetDatabase() error
 }
 
 // ConfigModule defines the configuration for the data provider

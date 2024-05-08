@@ -10,11 +10,6 @@ type MySQLProvider struct {
 	dbHandle *sqlx.DB
 }
 
-func (m *MySQLProvider) Connect() error {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (m *MySQLProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")
@@ -50,7 +45,7 @@ func (m *MySQLProvider) RevertDatabase(targetVersion int) error {
 	panic("implement me")
 }
 
-func (m *MySQLProvider) resetDatabase() error {
+func (m *MySQLProvider) ResetDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }

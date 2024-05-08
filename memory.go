@@ -10,11 +10,6 @@ type MemoryProvider struct {
 	dbHandle *sqlx.DB
 }
 
-func (m *MemoryProvider) Connect() error {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (m *MemoryProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")
@@ -50,7 +45,7 @@ func (m *MemoryProvider) RevertDatabase(targetVersion int) error {
 	panic("implement me")
 }
 
-func (m *MemoryProvider) resetDatabase() error {
+func (m *MemoryProvider) ResetDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }

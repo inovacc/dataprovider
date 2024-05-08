@@ -10,11 +10,6 @@ type SQLiteProvider struct {
 	dbHandle *sqlx.DB
 }
 
-func (S *SQLiteProvider) Connect() error {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (S *SQLiteProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")
@@ -50,7 +45,7 @@ func (S *SQLiteProvider) RevertDatabase(targetVersion int) error {
 	panic("implement me")
 }
 
-func (S *SQLiteProvider) resetDatabase() error {
+func (S *SQLiteProvider) ResetDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }
