@@ -1,6 +1,7 @@
 package dataprovider
 
 import (
+	"context"
 	"github.com/jmoiron/sqlx"
 	"time"
 )
@@ -118,18 +119,18 @@ type ProviderInstance struct {
 }
 
 // newProvider creates a new data provider instance
-func newProvider(cfg *ConfigModule) error {
+func newProvider(ctx context.Context, cfg *ConfigModule) error {
 	switch cfg.Driver {
 	case OracleDatabaseProviderName:
-		return NewOracleProvider()
+		return newOracleProvider(ctx)
 	case SQLiteDataProviderName:
-		return NewSQLiteProvider()
+		return newSQLiteProvider(ctx)
 	case MySQLDatabaseProviderName:
-		return NewMySQLProvider()
+		return newMySQLProvider(ctx)
 	case PostgreSQLDatabaseProviderName:
-		return NewPostgreSQLProvider()
+		return newPostgreSQLProvider(ctx)
 	case MemoryDataProviderName:
-		return NewMemoryProvider()
+		return newMemoryProvider(ctx)
 	}
 
 	return nil

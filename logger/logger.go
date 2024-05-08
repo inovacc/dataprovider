@@ -41,8 +41,11 @@ type Logger interface {
 	WithField(key string, value any) Logger
 }
 
-// any is a type that can hold any value.
-type any interface{}
+type logger struct {
+	level    LogLevel
+	formater any
+	out      io.Writer
+}
 
 // NewLogger creates a new Logger with the given name.
 func NewLogger(name string) Logger {
