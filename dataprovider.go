@@ -73,46 +73,6 @@ type Wrapper struct {
 	Provider
 }
 
-// ConfigModule defines the configuration for the data provider
-type ConfigModule struct {
-	// Driver name, must be one of the SupportedProviders
-	Driver string `json:"driver" mapstructure:"driver"`
-
-	// Database name. For driver sqlite this can be the database name relative to the config dir
-	// or the absolute path to the SQLite database.
-	Name string `json:"name" mapstructure:"name"`
-
-	// Database host. For postgresql and cockroachdb driver you can specify multiple hosts separated by commas
-	Host string `json:"host" mapstructure:"host"`
-
-	// Database port
-	Port int `json:"port" mapstructure:"port"`
-
-	// Database username
-	Username     string `json:"username" mapstructure:"username"`
-	UsernameFile string `json:"username_file" mapstructure:"username_file"`
-
-	// Database password
-	Password     string `json:"password" mapstructure:"password"`
-	PasswordFile string `json:"password_file" mapstructure:"password_file"`
-
-	// Database schema
-	Schema string `json:"schema" mapstructure:"schema"`
-
-	// prefix for SQL tables
-	SQLTablesPrefix string `json:"sql_tables_prefix" mapstructure:"sql_tables_prefix"`
-
-	// Sets the maximum number of open connections for mysql and postgresql driver.
-	// Default 0 (unlimited)
-	PoolSize int `json:"pool_size" mapstructure:"pool_size"`
-
-	// Path to the backup directory. This can be an absolute path or a path relative to the config dir
-	BackupsPath string `json:"backups_path" mapstructure:"backups_path"`
-
-	// If not empty this connection string will be used instead of the other fields
-	ConnectionString string `json:"connection_string" mapstructure:"connection_string"`
-}
-
 // NewProvider creates a new data provider instance
 func NewProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
 	switch cfg.Driver {

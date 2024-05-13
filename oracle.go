@@ -59,12 +59,8 @@ func newOracleProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error)
 		return nil, err
 	}
 
-	dbHandle.SetMaxOpenConns(cfg.PoolSize)
-	if cfg.PoolSize > 0 {
-		dbHandle.SetMaxIdleConns(cfg.PoolSize)
-	} else {
-		dbHandle.SetMaxIdleConns(2)
-	}
+	dbHandle.SetMaxOpenConns(cfg.PoolSize * 2)
+	dbHandle.SetMaxIdleConns(cfg.PoolSize)
 
 	if err = dbHandle.PingContext(ctx); err != nil {
 		return nil, err
