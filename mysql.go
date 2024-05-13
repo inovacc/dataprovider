@@ -16,20 +16,6 @@ func (m *MySQLProvider) MigrateDatabase() error {
 	panic("implement me")
 }
 
-func (m *MySQLProvider) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
-		Driver:   MySQLDatabaseProviderName,
-		IsActive: true,
-	}
-
-	if err := m.CheckAvailability(); err != nil {
-		status.IsActive = false
-		status.Error = err
-	}
-
-	return status
-}
-
 func (m *MySQLProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")

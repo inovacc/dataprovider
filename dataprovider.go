@@ -59,9 +59,6 @@ type Provider interface {
 
 	// ResetDatabase resets the database
 	ResetDatabase() error
-
-	// GetProviderStatus returns the status of the provider
-	GetProviderStatus() ProviderStatus
 }
 
 type ProviderStatus struct {
@@ -130,4 +127,18 @@ func NewProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
 	}
 
 	return nil, fmt.Errorf("unsupported driver %s", cfg.Driver)
+}
+
+func (w *Wrapper) GetProviderStatus() ProviderStatus {
+	status := ProviderStatus{
+		Driver:   MemoryDataProviderName,
+		IsActive: true,
+	}
+
+	if err := w.CheckAvailability(); err != nil {
+		status.IsActive = false
+		status.Error = err
+	}
+
+	return status
 }

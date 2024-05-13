@@ -16,20 +16,6 @@ func (m *MemoryProvider) MigrateDatabase() error {
 	panic("implement me")
 }
 
-func (m *MemoryProvider) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
-		Driver:   MemoryDataProviderName,
-		IsActive: true,
-	}
-
-	if err := m.CheckAvailability(); err != nil {
-		status.IsActive = false
-		status.Error = err
-	}
-
-	return status
-}
-
 func (m *MemoryProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")

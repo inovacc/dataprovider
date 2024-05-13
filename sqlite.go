@@ -17,20 +17,6 @@ func (s *SQLiteProvider) MigrateDatabase() error {
 	panic("implement me")
 }
 
-func (s *SQLiteProvider) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
-		Driver:   MemoryDataProviderName,
-		IsActive: true,
-	}
-
-	if err := s.CheckAvailability(); err != nil {
-		status.IsActive = false
-		status.Error = err
-	}
-
-	return status
-}
-
 func (s *SQLiteProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")

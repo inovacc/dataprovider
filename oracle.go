@@ -16,20 +16,6 @@ func (o *ORASQLProvider) MigrateDatabase() error {
 	panic("implement me")
 }
 
-func (o *ORASQLProvider) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
-		Driver:   OracleDatabaseProviderName,
-		IsActive: true,
-	}
-
-	if err := o.CheckAvailability(); err != nil {
-		status.IsActive = false
-		status.Error = err
-	}
-
-	return status
-}
-
 func (o *ORASQLProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")

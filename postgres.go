@@ -15,20 +15,6 @@ func (p *PGSQLProvider) MigrateDatabase() error {
 	panic("implement me")
 }
 
-func (p *PGSQLProvider) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
-		Driver:   PostgreSQLDatabaseProviderName,
-		IsActive: true,
-	}
-
-	if err := p.CheckAvailability(); err != nil {
-		status.IsActive = false
-		status.Error = err
-	}
-
-	return status
-}
-
 func (p *PGSQLProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")
