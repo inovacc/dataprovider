@@ -2,6 +2,7 @@ package dataprovider
 
 import (
 	"context"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -51,8 +52,9 @@ func (p *PGSQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newPostgreSQLProvider(ctx context.Context) (*Wrapper, error) {
-	dbHandle, err := sqlx.Connect("postgres", "user=postgres dbname=postgres password=postgres sslmode=disable")
+func newPostgreSQLProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
+	dsnString := fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable", cfg.Username, cfg.Name, cfg.Password)
+	dbHandle, err := sqlx.Connect("postgres", dsnString)
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +64,7 @@ func newPostgreSQLProvider(ctx context.Context) (*Wrapper, error) {
 	}
 
 	return &Wrapper{
+		Driver:   cfg.Driver,
 		Version:  1,
 		Provider: &PGSQLProvider{dbHandle: dbHandle},
 	}, nil

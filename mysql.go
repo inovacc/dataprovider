@@ -52,13 +52,9 @@ func (m *MySQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newMySQLProvider(ctx context.Context) (*Wrapper, error) {
-	ctxValue := ctx.Value("config").(*ConfigModule)
-	if ctxValue == nil {
-		return nil, fmt.Errorf("config not found in context")
-	}
-
-	dbHandle, err := sqlx.Connect("mysql", "user:password@tcp(localhost:3306)/dbname")
+func newMySQLProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
+	dsnString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
+	dbHandle, err := sqlx.Connect("mysql", dsnString)
 	if err != nil {
 		return nil, err
 	}
@@ -68,6 +64,7 @@ func newMySQLProvider(ctx context.Context) (*Wrapper, error) {
 	}
 
 	return &Wrapper{
+		Driver:   cfg.Driver,
 		Version:  1,
 		Provider: &MySQLProvider{dbHandle: dbHandle},
 	}, nil

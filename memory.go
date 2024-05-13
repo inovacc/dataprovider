@@ -52,7 +52,7 @@ func (m *MemoryProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newMemoryProvider(ctx context.Context) (*Wrapper, error) {
+func newMemoryProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
 	dbHandle, err := sqlx.Open("sqlite3", ":memory:")
 	if err != nil {
 		return nil, err
@@ -63,6 +63,7 @@ func newMemoryProvider(ctx context.Context) (*Wrapper, error) {
 	}
 
 	return &Wrapper{
+		Driver:   cfg.Driver,
 		Version:  1,
 		Provider: &MemoryProvider{dbHandle: dbHandle},
 	}, nil

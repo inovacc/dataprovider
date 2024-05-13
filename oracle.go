@@ -52,20 +52,15 @@ func (o *ORASQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newOracleProvider(ctx context.Context) (*Wrapper, error) {
-	ctxValue := ctx.Value("config").(*ConfigModule)
-	if ctxValue == nil {
-		return nil, fmt.Errorf("config not found in context")
-	}
-
-	dsnString := fmt.Sprintf("%s/%s@%s:%d/%s", ctxValue.Username, ctxValue.Password, ctxValue.Host, ctxValue.Port, ctxValue.Name)
-
+func newOracleProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
+	dsnString := fmt.Sprintf("%s/%s@%s:%d/%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
 	dbHandle, err := sqlx.Connect("godror", dsnString)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Wrapper{
+		Driver:   cfg.Driver,
 		Version:  1,
 		Provider: &ORASQLProvider{dbHandle: dbHandle},
 	}, nil

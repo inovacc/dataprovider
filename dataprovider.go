@@ -68,6 +68,7 @@ type ProviderStatus struct {
 }
 
 type Wrapper struct {
+	Driver  string
 	Version int
 	Provider
 }
@@ -111,19 +112,17 @@ type ConfigModule struct {
 
 // NewProvider creates a new data provider instance
 func NewProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
-	ctxValue := context.WithValue(ctx, "config", cfg)
-
 	switch cfg.Driver {
 	case OracleDatabaseProviderName:
-		return newOracleProvider(ctxValue)
+		return newOracleProvider(ctx, cfg)
 	case SQLiteDataProviderName:
-		return newSQLiteProvider(ctxValue)
+		return newSQLiteProvider(ctx, cfg)
 	case MySQLDatabaseProviderName:
-		return newMySQLProvider(ctxValue)
+		return newMySQLProvider(ctx, cfg)
 	case PostgreSQLDatabaseProviderName:
-		return newPostgreSQLProvider(ctxValue)
+		return newPostgreSQLProvider(ctx, cfg)
 	case MemoryDataProviderName:
-		return newMemoryProvider(ctxValue)
+		return newMemoryProvider(ctx, cfg)
 	}
 
 	return nil, fmt.Errorf("unsupported driver %s", cfg.Driver)
@@ -131,7 +130,7 @@ func NewProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
 
 func (w *Wrapper) GetProviderStatus() ProviderStatus {
 	status := ProviderStatus{
-		Driver:   MemoryDataProviderName,
+		Driver:   w.Driver,
 		IsActive: true,
 	}
 
