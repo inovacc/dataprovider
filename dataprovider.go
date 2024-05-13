@@ -35,6 +35,8 @@ const (
 	longSQLQueryTimeout    = 60 * time.Second
 )
 
+var driverName string
+
 type Provider interface {
 	// Disconnect disconnects from the data provider
 	Disconnect() error
@@ -59,6 +61,9 @@ type Provider interface {
 
 	// ResetDatabase resets the database
 	ResetDatabase() error
+
+	// GetProviderStatus returns the status of the provider
+	GetProviderStatus() ProviderStatus
 }
 
 type ProviderStatus struct {
@@ -67,15 +72,11 @@ type ProviderStatus struct {
 	IsActive bool   `json:"is_active"`
 }
 
-type Wrapper struct {
-	Driver  string
-	Version int
-	Provider
-}
-
 // NewProvider creates a new data provider instance
-func NewProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
-	switch cfg.Driver {
+func NewProvider(ctx context.Context, cfg *ConfigModule) (Provider, error) {
+	driverName = cfg.Driver
+
+	switch driverName {
 	case OracleDatabaseProviderName:
 		return newOracleProvider(ctx, cfg)
 	case SQLiteDataProviderName:
@@ -88,19 +89,5 @@ func NewProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
 		return newMemoryProvider(ctx, cfg)
 	}
 
-	return nil, fmt.Errorf("unsupported driver %s", cfg.Driver)
-}
-
-func (w *Wrapper) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
-		Driver:   w.Driver,
-		IsActive: true,
-	}
-
-	if err := w.CheckAvailability(); err != nil {
-		status.IsActive = false
-		status.Error = err
-	}
-
-	return status
+	return nil, fmt.Errorf("unsupported driver %s", driverName)
 }

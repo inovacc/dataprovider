@@ -12,6 +12,20 @@ type SQLiteProvider struct {
 	dbHandle *sqlx.DB
 }
 
+func (s *SQLiteProvider) GetProviderStatus() ProviderStatus {
+	status := ProviderStatus{
+		Driver:   driverName,
+		IsActive: true,
+	}
+
+	if err := s.CheckAvailability(); err != nil {
+		status.IsActive = false
+		status.Error = err
+	}
+
+	return status
+}
+
 func (s *SQLiteProvider) MigrateDatabase() error {
 	//TODO implement me
 	panic("implement me")
@@ -53,7 +67,7 @@ func (s *SQLiteProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newSQLiteProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
+func newSQLiteProvider(ctx context.Context, cfg *ConfigModule) (*SQLiteProvider, error) {
 	connectionString := cfg.ConnectionString
 
 	if cfg.ConnectionString == "" {
@@ -71,9 +85,5 @@ func newSQLiteProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error)
 		return nil, err
 	}
 
-	return &Wrapper{
-		Driver:   cfg.Driver,
-		Version:  1,
-		Provider: &SQLiteProvider{dbHandle: dbHandle},
-	}, nil
+	return &SQLiteProvider{dbHandle: dbHandle}, nil
 }

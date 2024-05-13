@@ -11,6 +11,20 @@ type MemoryProvider struct {
 	dbHandle *sqlx.DB
 }
 
+func (m *MemoryProvider) GetProviderStatus() ProviderStatus {
+	status := ProviderStatus{
+		Driver:   driverName,
+		IsActive: true,
+	}
+
+	if err := m.CheckAvailability(); err != nil {
+		status.IsActive = false
+		status.Error = err
+	}
+
+	return status
+}
+
 func (m *MemoryProvider) MigrateDatabase() error {
 	//TODO implement me
 	panic("implement me")
@@ -52,7 +66,7 @@ func (m *MemoryProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newMemoryProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
+func newMemoryProvider(ctx context.Context, cfg *ConfigModule) (*MemoryProvider, error) {
 	dbHandle, err := sqlx.Open("sqlite3", ":memory:")
 	if err != nil {
 		return nil, err
@@ -62,9 +76,5 @@ func newMemoryProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error)
 		return nil, err
 	}
 
-	return &Wrapper{
-		Driver:   cfg.Driver,
-		Version:  1,
-		Provider: &MemoryProvider{dbHandle: dbHandle},
-	}, nil
+	return &MemoryProvider{dbHandle: dbHandle}, nil
 }

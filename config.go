@@ -53,7 +53,7 @@ type Builder struct {
 	connectionString string
 }
 
-func NewBuilder() *Builder {
+func NewConfigModule() *Builder {
 	return &Builder{}
 }
 

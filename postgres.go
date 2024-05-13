@@ -11,6 +11,20 @@ type PGSQLProvider struct {
 	dbHandle *sqlx.DB
 }
 
+func (p *PGSQLProvider) GetProviderStatus() ProviderStatus {
+	status := ProviderStatus{
+		Driver:   driverName,
+		IsActive: true,
+	}
+
+	if err := p.CheckAvailability(); err != nil {
+		status.IsActive = false
+		status.Error = err
+	}
+
+	return status
+}
+
 func (p *PGSQLProvider) MigrateDatabase() error {
 	//TODO implement me
 	panic("implement me")
@@ -52,7 +66,7 @@ func (p *PGSQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newPostgreSQLProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
+func newPostgreSQLProvider(ctx context.Context, cfg *ConfigModule) (*PGSQLProvider, error) {
 	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable", cfg.Username, cfg.Name, cfg.Password)
 	dbHandle, err := sqlx.Connect("postgres", dataSourceName)
 	if err != nil {
@@ -70,9 +84,5 @@ func newPostgreSQLProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, er
 		return nil, err
 	}
 
-	return &Wrapper{
-		Driver:   cfg.Driver,
-		Version:  1,
-		Provider: &PGSQLProvider{dbHandle: dbHandle},
-	}, nil
+	return &PGSQLProvider{dbHandle: dbHandle}, nil
 }

@@ -11,6 +11,20 @@ type MySQLProvider struct {
 	dbHandle *sqlx.DB
 }
 
+func (m *MySQLProvider) GetProviderStatus() ProviderStatus {
+	status := ProviderStatus{
+		Driver:   driverName,
+		IsActive: true,
+	}
+
+	if err := m.CheckAvailability(); err != nil {
+		status.IsActive = false
+		status.Error = err
+	}
+
+	return status
+}
+
 func (m *MySQLProvider) MigrateDatabase() error {
 	//TODO implement me
 	panic("implement me")
@@ -52,7 +66,7 @@ func (m *MySQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newMySQLProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
+func newMySQLProvider(ctx context.Context, cfg *ConfigModule) (*MySQLProvider, error) {
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
 	dbHandle, err := sqlx.Connect("mysql", dataSourceName)
 	if err != nil {
@@ -70,9 +84,5 @@ func newMySQLProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) 
 		return nil, err
 	}
 
-	return &Wrapper{
-		Driver:   cfg.Driver,
-		Version:  1,
-		Provider: &MySQLProvider{dbHandle: dbHandle},
-	}, nil
+	return &MySQLProvider{dbHandle: dbHandle}, nil
 }

@@ -52,7 +52,21 @@ func (o *ORASQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newOracleProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
+func (o *ORASQLProvider) GetProviderStatus() ProviderStatus {
+	status := ProviderStatus{
+		Driver:   driverName,
+		IsActive: true,
+	}
+
+	if err := o.CheckAvailability(); err != nil {
+		status.IsActive = false
+		status.Error = err
+	}
+
+	return status
+}
+
+func newOracleProvider(ctx context.Context, cfg *ConfigModule) (*ORASQLProvider, error) {
 	dataSourceName := fmt.Sprintf("%s/%s@%s:%d/%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
 	dbHandle, err := sqlx.Connect("godror", dataSourceName)
 	if err != nil {
@@ -66,9 +80,5 @@ func newOracleProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error)
 		return nil, err
 	}
 
-	return &Wrapper{
-		Driver:   cfg.Driver,
-		Version:  1,
-		Provider: &ORASQLProvider{dbHandle: dbHandle},
-	}, nil
+	return &ORASQLProvider{dbHandle: dbHandle}, nil
 }
