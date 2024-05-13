@@ -3,6 +3,7 @@ package dataprovider
 import (
 	"context"
 	"fmt"
+	_ "github.com/godror/godror"
 	"github.com/jmoiron/sqlx"
 )
 
