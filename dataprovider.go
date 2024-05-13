@@ -72,8 +72,8 @@ type ProviderStatus struct {
 	IsActive bool   `json:"is_active"`
 }
 
-// NewProvider creates a new data provider instance
-func NewProvider(ctx context.Context, cfg *ConfigModule) (Provider, error) {
+// NewDataProvider creates a new data provider instance
+func NewDataProvider(ctx context.Context, cfg *ConfigModule) (Provider, error) {
 	driverName = cfg.Driver
 
 	switch driverName {

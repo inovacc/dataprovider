@@ -1,3 +1,5 @@
+//go:build windows
+
 package dataprovider
 
 import (
@@ -13,7 +15,7 @@ func TestMemoryProvider(t *testing.T) {
 		Driver: MemoryDataProviderName,
 	}
 
-	provider, err := NewProvider(ctx, cfg)
+	provider, err := NewDataProvider(ctx, cfg)
 	assert.NoError(t, err)
 
 	providerStatus := provider.GetProviderStatus()
