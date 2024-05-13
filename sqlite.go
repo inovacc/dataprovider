@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // SQLiteProvider defines the auth provider for SQLite database
@@ -11,62 +12,78 @@ type SQLiteProvider struct {
 	dbHandle *sqlx.DB
 }
 
-func (S *SQLiteProvider) Disconnect() error {
+func (s *SQLiteProvider) MigrateDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (S *SQLiteProvider) GetConnection() *sqlx.DB {
+func (s *SQLiteProvider) GetProviderStatus() ProviderStatus {
+	status := ProviderStatus{
+		Driver:   MemoryDataProviderName,
+		IsActive: true,
+	}
+
+	if err := s.CheckAvailability(); err != nil {
+		status.IsActive = false
+		status.Error = err
+	}
+
+	return status
+}
+
+func (s *SQLiteProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (S *SQLiteProvider) CheckAvailability() error {
+func (s *SQLiteProvider) GetConnection() *sqlx.DB {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (S *SQLiteProvider) ReconnectDatabase() error {
+func (s *SQLiteProvider) CheckAvailability() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5)
+	defer cancel()
+
+	return s.dbHandle.PingContext(ctx)
+}
+
+func (s *SQLiteProvider) ReconnectDatabase() error {
+	return s.CheckAvailability()
+}
+
+func (s *SQLiteProvider) InitializeDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (S *SQLiteProvider) InitializeDatabase() error {
+func (s *SQLiteProvider) RevertDatabase(targetVersion int) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (S *SQLiteProvider) migrateDatabase() error {
+func (s *SQLiteProvider) ResetDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (S *SQLiteProvider) RevertDatabase(targetVersion int) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (S *SQLiteProvider) ResetDatabase() error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func newSQLiteProvider(ctx context.Context) error {
+func newSQLiteProvider(ctx context.Context) (*Wrapper, error) {
 	ctxValue := ctx.Value("config").(*ConfigModule)
 	if ctxValue == nil {
-		return fmt.Errorf("config not found in context")
+		return nil, fmt.Errorf("config not found in context")
 	}
 
 	dbHandle, err := sqlx.Connect("sqlite3", ":memory:")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err = dbHandle.PingContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
-	provider = &SQLiteProvider{dbHandle: dbHandle}
-
-	return nil
+	return &Wrapper{
+		Version:  1,
+		Provider: &SQLiteProvider{dbHandle: dbHandle},
+	}, nil
 }

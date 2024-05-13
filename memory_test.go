@@ -13,8 +13,9 @@ func TestMemoryProvider(t *testing.T) {
 		Driver: MemoryDataProviderName,
 	}
 
-	err := newProvider(ctx, cfg)
+	provider, err := NewProvider(ctx, cfg)
 	assert.NoError(t, err)
 
-	provider := GetProvider()
+	providerStatus := provider.GetProviderStatus()
+	assert.Equal(t, MemoryDataProviderName, providerStatus.Driver)
 }

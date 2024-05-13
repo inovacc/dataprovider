@@ -11,6 +11,25 @@ type ORASQLProvider struct {
 	dbHandle *sqlx.DB
 }
 
+func (o *ORASQLProvider) MigrateDatabase() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (o *ORASQLProvider) GetProviderStatus() ProviderStatus {
+	status := ProviderStatus{
+		Driver:   OracleDatabaseProviderName,
+		IsActive: true,
+	}
+
+	if err := o.CheckAvailability(); err != nil {
+		status.IsActive = false
+		status.Error = err
+	}
+
+	return status
+}
+
 func (o *ORASQLProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")
@@ -22,21 +41,17 @@ func (o *ORASQLProvider) GetConnection() *sqlx.DB {
 }
 
 func (o *ORASQLProvider) CheckAvailability() error {
-	//TODO implement me
-	panic("implement me")
+	ctx, cancel := context.WithTimeout(context.Background(), 5)
+	defer cancel()
+
+	return o.dbHandle.PingContext(ctx)
 }
 
 func (o *ORASQLProvider) ReconnectDatabase() error {
-	//TODO implement me
-	panic("implement me")
+	return o.CheckAvailability()
 }
 
 func (o *ORASQLProvider) InitializeDatabase() error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (o *ORASQLProvider) migrateDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -51,20 +66,21 @@ func (o *ORASQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newOracleProvider(ctx context.Context) error {
+func newOracleProvider(ctx context.Context) (*Wrapper, error) {
 	ctxValue := ctx.Value("config").(*ConfigModule)
 	if ctxValue == nil {
-		return fmt.Errorf("config not found in context")
+		return nil, fmt.Errorf("config not found in context")
 	}
 
 	dsnString := fmt.Sprintf("%s/%s@%s:%d/%s", ctxValue.Username, ctxValue.Password, ctxValue.Host, ctxValue.Port, ctxValue.Name)
 
 	dbHandle, err := sqlx.Connect("godror", dsnString)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	provider = &ORASQLProvider{dbHandle: dbHandle}
-
-	return nil
+	return &Wrapper{
+		Version:  1,
+		Provider: &ORASQLProvider{dbHandle: dbHandle},
+	}, nil
 }

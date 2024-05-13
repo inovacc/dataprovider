@@ -11,6 +11,25 @@ type MySQLProvider struct {
 	dbHandle *sqlx.DB
 }
 
+func (m *MySQLProvider) MigrateDatabase() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *MySQLProvider) GetProviderStatus() ProviderStatus {
+	status := ProviderStatus{
+		Driver:   MySQLDatabaseProviderName,
+		IsActive: true,
+	}
+
+	if err := m.CheckAvailability(); err != nil {
+		status.IsActive = false
+		status.Error = err
+	}
+
+	return status
+}
+
 func (m *MySQLProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")
@@ -22,21 +41,17 @@ func (m *MySQLProvider) GetConnection() *sqlx.DB {
 }
 
 func (m *MySQLProvider) CheckAvailability() error {
-	//TODO implement me
-	panic("implement me")
+	ctx, cancel := context.WithTimeout(context.Background(), 5)
+	defer cancel()
+
+	return m.dbHandle.PingContext(ctx)
 }
 
 func (m *MySQLProvider) ReconnectDatabase() error {
-	//TODO implement me
-	panic("implement me")
+	return m.CheckAvailability()
 }
 
 func (m *MySQLProvider) InitializeDatabase() error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MySQLProvider) migrateDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -51,22 +66,23 @@ func (m *MySQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newMySQLProvider(ctx context.Context) error {
+func newMySQLProvider(ctx context.Context) (*Wrapper, error) {
 	ctxValue := ctx.Value("config").(*ConfigModule)
 	if ctxValue == nil {
-		return fmt.Errorf("config not found in context")
+		return nil, fmt.Errorf("config not found in context")
 	}
 
 	dbHandle, err := sqlx.Connect("mysql", "user:password@tcp(localhost:3306)/dbname")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err = dbHandle.PingContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
-	provider = &MySQLProvider{dbHandle: dbHandle}
-
-	return nil
+	return &Wrapper{
+		Version:  1,
+		Provider: &MySQLProvider{dbHandle: dbHandle},
+	}, nil
 }

@@ -2,6 +2,7 @@ package dataprovider
 
 import (
 	"context"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"time"
 )
@@ -34,8 +35,6 @@ const (
 	longSQLQueryTimeout    = 60 * time.Second
 )
 
-var provider Provider
-
 type Provider interface {
 	// Disconnect disconnects from the data provider
 	Disconnect() error
@@ -53,13 +52,27 @@ type Provider interface {
 	InitializeDatabase() error
 
 	// MigrateDatabase migrates the database to the latest version
-	migrateDatabase() error
+	MigrateDatabase() error
 
 	// RevertDatabase reverts the database to the specified version
 	RevertDatabase(targetVersion int) error
 
 	// ResetDatabase resets the database
 	ResetDatabase() error
+
+	// GetProviderStatus returns the status of the provider
+	GetProviderStatus() ProviderStatus
+}
+
+type ProviderStatus struct {
+	Driver   string `json:"driver"`
+	Error    error  `json:"error"`
+	IsActive bool   `json:"is_active"`
+}
+
+type Wrapper struct {
+	Version int
+	Provider
 }
 
 // ConfigModule defines the configuration for the data provider
@@ -99,12 +112,8 @@ type ConfigModule struct {
 	BackupsPath string `json:"backups_path" mapstructure:"backups_path"`
 }
 
-type schemaVersion struct {
-	Version int
-}
-
-// newProvider creates a new data provider instance
-func newProvider(ctx context.Context, cfg *ConfigModule) error {
+// NewProvider creates a new data provider instance
+func NewProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
 	ctxValue := context.WithValue(ctx, "config", cfg)
 
 	switch cfg.Driver {
@@ -120,5 +129,5 @@ func newProvider(ctx context.Context, cfg *ConfigModule) error {
 		return newMemoryProvider(ctxValue)
 	}
 
-	return nil
+	return nil, fmt.Errorf("unsupported driver %s", cfg.Driver)
 }

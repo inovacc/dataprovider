@@ -3,11 +3,31 @@ package dataprovider
 import (
 	"context"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // MemoryProvider defines the auth provider for in-memory database
 type MemoryProvider struct {
 	dbHandle *sqlx.DB
+}
+
+func (m *MemoryProvider) MigrateDatabase() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *MemoryProvider) GetProviderStatus() ProviderStatus {
+	status := ProviderStatus{
+		Driver:   MemoryDataProviderName,
+		IsActive: true,
+	}
+
+	if err := m.CheckAvailability(); err != nil {
+		status.IsActive = false
+		status.Error = err
+	}
+
+	return status
 }
 
 func (m *MemoryProvider) Disconnect() error {
@@ -21,21 +41,17 @@ func (m *MemoryProvider) GetConnection() *sqlx.DB {
 }
 
 func (m *MemoryProvider) CheckAvailability() error {
-	//TODO implement me
-	panic("implement me")
+	ctx, cancel := context.WithTimeout(context.Background(), 5)
+	defer cancel()
+
+	return m.dbHandle.PingContext(ctx)
 }
 
 func (m *MemoryProvider) ReconnectDatabase() error {
-	//TODO implement me
-	panic("implement me")
+	return m.CheckAvailability()
 }
 
 func (m *MemoryProvider) InitializeDatabase() error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MemoryProvider) migrateDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -50,17 +66,18 @@ func (m *MemoryProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newMemoryProvider(ctx context.Context) error {
+func newMemoryProvider(ctx context.Context) (*Wrapper, error) {
 	dbHandle, err := sqlx.Open("sqlite3", ":memory:")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err = dbHandle.PingContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
-	provider = &MemoryProvider{dbHandle: dbHandle}
-
-	return nil
+	return &Wrapper{
+		Version:  1,
+		Provider: &MemoryProvider{dbHandle: dbHandle},
+	}, nil
 }

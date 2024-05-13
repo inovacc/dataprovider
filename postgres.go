@@ -10,6 +10,25 @@ type PGSQLProvider struct {
 	dbHandle *sqlx.DB
 }
 
+func (p *PGSQLProvider) MigrateDatabase() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PGSQLProvider) GetProviderStatus() ProviderStatus {
+	status := ProviderStatus{
+		Driver:   PostgreSQLDatabaseProviderName,
+		IsActive: true,
+	}
+
+	if err := p.CheckAvailability(); err != nil {
+		status.IsActive = false
+		status.Error = err
+	}
+
+	return status
+}
+
 func (p *PGSQLProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")
@@ -21,21 +40,17 @@ func (p *PGSQLProvider) GetConnection() *sqlx.DB {
 }
 
 func (p *PGSQLProvider) CheckAvailability() error {
-	//TODO implement me
-	panic("implement me")
+	ctx, cancel := context.WithTimeout(context.Background(), 5)
+	defer cancel()
+
+	return p.dbHandle.PingContext(ctx)
 }
 
 func (p *PGSQLProvider) ReconnectDatabase() error {
-	//TODO implement me
-	panic("implement me")
+	return p.CheckAvailability()
 }
 
 func (p *PGSQLProvider) InitializeDatabase() error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (p *PGSQLProvider) migrateDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -50,17 +65,18 @@ func (p *PGSQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newPostgreSQLProvider(ctx context.Context) error {
+func newPostgreSQLProvider(ctx context.Context) (*Wrapper, error) {
 	dbHandle, err := sqlx.Connect("postgres", "user=postgres dbname=postgres password=postgres sslmode=disable")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err = dbHandle.PingContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
-	provider = &PGSQLProvider{dbHandle: dbHandle}
-
-	return nil
+	return &Wrapper{
+		Version:  1,
+		Provider: &PGSQLProvider{dbHandle: dbHandle},
+	}, nil
 }
