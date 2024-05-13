@@ -10,42 +10,42 @@ type PGSQLProvider struct {
 	dbHandle *sqlx.DB
 }
 
-func (P *PGSQLProvider) Disconnect() error {
+func (p *PGSQLProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (P *PGSQLProvider) GetConnection() *sqlx.DB {
+func (p *PGSQLProvider) GetConnection() *sqlx.DB {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (P *PGSQLProvider) CheckAvailability() error {
+func (p *PGSQLProvider) CheckAvailability() error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (P *PGSQLProvider) ReconnectDatabase() error {
+func (p *PGSQLProvider) ReconnectDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (P *PGSQLProvider) InitializeDatabase() error {
+func (p *PGSQLProvider) InitializeDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (P *PGSQLProvider) migrateDatabase() error {
+func (p *PGSQLProvider) migrateDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (P *PGSQLProvider) RevertDatabase(targetVersion int) error {
+func (p *PGSQLProvider) RevertDatabase(targetVersion int) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (P *PGSQLProvider) ResetDatabase() error {
+func (p *PGSQLProvider) ResetDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }

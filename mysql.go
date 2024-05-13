@@ -2,6 +2,7 @@ package dataprovider
 
 import (
 	"context"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -51,6 +52,11 @@ func (m *MySQLProvider) ResetDatabase() error {
 }
 
 func newMySQLProvider(ctx context.Context) error {
+	ctxValue := ctx.Value("config").(*ConfigModule)
+	if ctxValue == nil {
+		return fmt.Errorf("config not found in context")
+	}
+
 	dbHandle, err := sqlx.Connect("mysql", "user:password@tcp(localhost:3306)/dbname")
 	if err != nil {
 		return err

@@ -7,19 +7,19 @@ import (
 )
 
 const (
-	// OracleDatabaseProviderName defines the name for Oracle database ProviderInstance
+	// OracleDatabaseProviderName defines the name for Oracle database Provider
 	OracleDatabaseProviderName = "oracle"
 
-	// SQLiteDataProviderName defines the name for SQLite database ProviderInstance
+	// SQLiteDataProviderName defines the name for SQLite database Provider
 	SQLiteDataProviderName = "sqlite"
 
-	// MySQLDatabaseProviderName defines the name for MySQL database ProviderInstance
+	// MySQLDatabaseProviderName defines the name for MySQL database Provider
 	MySQLDatabaseProviderName = "mysql"
 
-	// PostgreSQLDatabaseProviderName defines the name for PostgreSQL database ProviderInstance
+	// PostgreSQLDatabaseProviderName defines the name for PostgreSQL database Provider
 	PostgreSQLDatabaseProviderName = "postgresql"
 
-	// MemoryDataProviderName defines the name for memory provider using SQLite in-memory database
+	// MemoryDataProviderName defines the name for memory provider using SQLite in-memory database Provider
 	MemoryDataProviderName = "memory"
 )
 
@@ -103,31 +103,21 @@ type schemaVersion struct {
 	Version int
 }
 
-// ProviderInstance defines the data provider instance
-type ProviderInstance struct {
-	Name     string
-	Pass     string
-	User     string
-	Host     string
-	Port     int
-	Database string
-	Driver   string
-	Provider Provider
-}
-
 // newProvider creates a new data provider instance
 func newProvider(ctx context.Context, cfg *ConfigModule) error {
+	ctxValue := context.WithValue(ctx, "config", cfg)
+
 	switch cfg.Driver {
 	case OracleDatabaseProviderName:
-		return newOracleProvider(ctx)
+		return newOracleProvider(ctxValue)
 	case SQLiteDataProviderName:
-		return newSQLiteProvider(ctx)
+		return newSQLiteProvider(ctxValue)
 	case MySQLDatabaseProviderName:
-		return newMySQLProvider(ctx)
+		return newMySQLProvider(ctxValue)
 	case PostgreSQLDatabaseProviderName:
-		return newPostgreSQLProvider(ctx)
+		return newPostgreSQLProvider(ctxValue)
 	case MemoryDataProviderName:
-		return newMemoryProvider(ctx)
+		return newMemoryProvider(ctxValue)
 	}
 
 	return nil

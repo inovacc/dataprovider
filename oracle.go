@@ -2,6 +2,7 @@ package dataprovider
 
 import (
 	"context"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -51,7 +52,14 @@ func (o *ORASQLProvider) ResetDatabase() error {
 }
 
 func newOracleProvider(ctx context.Context) error {
-	dbHandle, err := sqlx.ConnectContext(ctx, OracleDatabaseProviderName, "")
+	ctxValue := ctx.Value("config").(*ConfigModule)
+	if ctxValue == nil {
+		return fmt.Errorf("config not found in context")
+	}
+
+	dsnString := fmt.Sprintf("%s/%s@%s:%d/%s", ctxValue.Username, ctxValue.Password, ctxValue.Host, ctxValue.Port, ctxValue.Name)
+
+	dbHandle, err := sqlx.Connect("godror", dsnString)
 	if err != nil {
 		return err
 	}

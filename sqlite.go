@@ -2,6 +2,7 @@ package dataprovider
 
 import (
 	"context"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -51,6 +52,11 @@ func (S *SQLiteProvider) ResetDatabase() error {
 }
 
 func newSQLiteProvider(ctx context.Context) error {
+	ctxValue := ctx.Value("config").(*ConfigModule)
+	if ctxValue == nil {
+		return fmt.Errorf("config not found in context")
+	}
+
 	dbHandle, err := sqlx.Connect("sqlite3", ":memory:")
 	if err != nil {
 		return err
