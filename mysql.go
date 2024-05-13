@@ -37,7 +37,7 @@ func (m *MySQLProvider) ReconnectDatabase() error {
 	return m.CheckAvailability()
 }
 
-func (m *MySQLProvider) InitializeDatabase() error {
+func (m *MySQLProvider) InitializeDatabase(schema string) error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -53,10 +53,17 @@ func (m *MySQLProvider) ResetDatabase() error {
 }
 
 func newMySQLProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
-	dsnString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
-	dbHandle, err := sqlx.Connect("mysql", dsnString)
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
+	dbHandle, err := sqlx.Connect("mysql", dataSourceName)
 	if err != nil {
 		return nil, err
+	}
+
+	dbHandle.SetMaxOpenConns(cfg.PoolSize)
+	if cfg.PoolSize > 0 {
+		dbHandle.SetMaxIdleConns(cfg.PoolSize)
+	} else {
+		dbHandle.SetMaxIdleConns(2)
 	}
 
 	if err = dbHandle.PingContext(ctx); err != nil {

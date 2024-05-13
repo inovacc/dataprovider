@@ -37,7 +37,7 @@ func (m *MemoryProvider) ReconnectDatabase() error {
 	return m.CheckAvailability()
 }
 
-func (m *MemoryProvider) InitializeDatabase() error {
+func (m *MemoryProvider) InitializeDatabase(schema string) error {
 	//TODO implement me
 	panic("implement me")
 }

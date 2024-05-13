@@ -49,7 +49,7 @@ type Provider interface {
 	ReconnectDatabase() error
 
 	// InitializeDatabase initializes the database
-	InitializeDatabase() error
+	InitializeDatabase(schema string) error
 
 	// MigrateDatabase migrates the database to the latest version
 	MigrateDatabase() error
@@ -108,6 +108,9 @@ type ConfigModule struct {
 
 	// Path to the backup directory. This can be an absolute path or a path relative to the config dir
 	BackupsPath string `json:"backups_path" mapstructure:"backups_path"`
+
+	// If not empty this connection string will be used instead of the other fields
+	ConnectionString string `json:"connection_string" mapstructure:"connection_string"`
 }
 
 // NewProvider creates a new data provider instance

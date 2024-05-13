@@ -37,7 +37,7 @@ func (o *ORASQLProvider) ReconnectDatabase() error {
 	return o.CheckAvailability()
 }
 
-func (o *ORASQLProvider) InitializeDatabase() error {
+func (o *ORASQLProvider) InitializeDatabase(schema string) error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -53,9 +53,20 @@ func (o *ORASQLProvider) ResetDatabase() error {
 }
 
 func newOracleProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
-	dsnString := fmt.Sprintf("%s/%s@%s:%d/%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
-	dbHandle, err := sqlx.Connect("godror", dsnString)
+	dataSourceName := fmt.Sprintf("%s/%s@%s:%d/%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
+	dbHandle, err := sqlx.Connect("godror", dataSourceName)
 	if err != nil {
+		return nil, err
+	}
+
+	dbHandle.SetMaxOpenConns(cfg.PoolSize)
+	if cfg.PoolSize > 0 {
+		dbHandle.SetMaxIdleConns(cfg.PoolSize)
+	} else {
+		dbHandle.SetMaxIdleConns(2)
+	}
+
+	if err = dbHandle.PingContext(ctx); err != nil {
 		return nil, err
 	}
 

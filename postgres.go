@@ -37,7 +37,7 @@ func (p *PGSQLProvider) ReconnectDatabase() error {
 	return p.CheckAvailability()
 }
 
-func (p *PGSQLProvider) InitializeDatabase() error {
+func (p *PGSQLProvider) InitializeDatabase(schema string) error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -53,10 +53,17 @@ func (p *PGSQLProvider) ResetDatabase() error {
 }
 
 func newPostgreSQLProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
-	dsnString := fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable", cfg.Username, cfg.Name, cfg.Password)
-	dbHandle, err := sqlx.Connect("postgres", dsnString)
+	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable", cfg.Username, cfg.Name, cfg.Password)
+	dbHandle, err := sqlx.Connect("postgres", dataSourceName)
 	if err != nil {
 		return nil, err
+	}
+
+	dbHandle.SetMaxOpenConns(cfg.PoolSize)
+	if cfg.PoolSize > 0 {
+		dbHandle.SetMaxIdleConns(cfg.PoolSize)
+	} else {
+		dbHandle.SetMaxIdleConns(2)
 	}
 
 	if err = dbHandle.PingContext(ctx); err != nil {

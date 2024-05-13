@@ -2,6 +2,7 @@ package dataprovider
 
 import (
 	"context"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -37,7 +38,7 @@ func (s *SQLiteProvider) ReconnectDatabase() error {
 	return s.CheckAvailability()
 }
 
-func (s *SQLiteProvider) InitializeDatabase() error {
+func (s *SQLiteProvider) InitializeDatabase(schema string) error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -53,10 +54,18 @@ func (s *SQLiteProvider) ResetDatabase() error {
 }
 
 func newSQLiteProvider(ctx context.Context, cfg *ConfigModule) (*Wrapper, error) {
-	dbHandle, err := sqlx.Connect("sqlite3", ":memory:")
+	connectionString := cfg.ConnectionString
+
+	if cfg.ConnectionString == "" {
+		connectionString = fmt.Sprintf("file:%s.db?cache=shared&_foreign_keys=1", cfg.Name)
+	}
+
+	dbHandle, err := sqlx.Connect("sqlite3", connectionString)
 	if err != nil {
 		return nil, err
 	}
+
+	dbHandle.SetMaxOpenConns(1)
 
 	if err = dbHandle.PingContext(ctx); err != nil {
 		return nil, err
