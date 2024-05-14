@@ -32,13 +32,11 @@ func (s *SQLiteProvider) MigrateDatabase() error {
 }
 
 func (s *SQLiteProvider) Disconnect() error {
-	//TODO implement me
-	panic("implement me")
+	return s.dbHandle.Close()
 }
 
 func (s *SQLiteProvider) GetConnection() *sqlx.DB {
-	//TODO implement me
-	panic("implement me")
+	return s.dbHandle
 }
 
 func (s *SQLiteProvider) CheckAvailability() error {
@@ -53,8 +51,8 @@ func (s *SQLiteProvider) ReconnectDatabase() error {
 }
 
 func (s *SQLiteProvider) InitializeDatabase(schema string) error {
-	//TODO implement me
-	panic("implement me")
+	_, err := s.dbHandle.Exec(schema)
+	return err
 }
 
 func (s *SQLiteProvider) RevertDatabase(targetVersion int) error {

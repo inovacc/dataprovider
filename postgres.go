@@ -36,8 +36,7 @@ func (p *PGSQLProvider) Disconnect() error {
 }
 
 func (p *PGSQLProvider) GetConnection() *sqlx.DB {
-	//TODO implement me
-	panic("implement me")
+	return p.dbHandle
 }
 
 func (p *PGSQLProvider) CheckAvailability() error {

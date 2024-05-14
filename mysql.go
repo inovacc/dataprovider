@@ -36,8 +36,7 @@ func (m *MySQLProvider) Disconnect() error {
 }
 
 func (m *MySQLProvider) GetConnection() *sqlx.DB {
-	//TODO implement me
-	panic("implement me")
+	return m.dbHandle
 }
 
 func (m *MySQLProvider) CheckAvailability() error {

@@ -23,8 +23,7 @@ func (o *ORASQLProvider) Disconnect() error {
 }
 
 func (o *ORASQLProvider) GetConnection() *sqlx.DB {
-	//TODO implement me
-	panic("implement me")
+	return o.dbHandle
 }
 
 func (o *ORASQLProvider) CheckAvailability() error {

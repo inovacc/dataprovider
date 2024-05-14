@@ -5,7 +5,8 @@ go 1.22.2
 require (
 	github.com/godror/godror v0.43.0
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/mattn/go-sqlite3 v1.14.22
+	github.com/joncalhoun/migrate v0.0.2
+	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/stretchr/testify v1.9.0
 )
 

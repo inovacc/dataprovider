@@ -36,8 +36,7 @@ func (m *MemoryProvider) Disconnect() error {
 }
 
 func (m *MemoryProvider) GetConnection() *sqlx.DB {
-	//TODO implement me
-	panic("implement me")
+	return m.dbHandle
 }
 
 func (m *MemoryProvider) CheckAvailability() error {
