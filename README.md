@@ -1,3 +1,7 @@
+[![ci-test](https://github.com/dyammarcano/dataprovider/actions/workflows/ci.yml/badge.svg)](https://github.com/dyammarcano/dataprovider/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dyammarcano/dataprovider)](https://goreportcard.com/report/github.com/dyammarcano/dataprovider)
+[![Go Reference](https://pkg.go.dev/badge/github.com/dyammarcano/dataprovider.svg)](https://pkg.go.dev/github.com/dyammarcano/dataprovider)
+
 # Dataprovider
 
 dataprovider is a module that provides a uniform interface to handle behind the scene with manu dtabases. It is designed
