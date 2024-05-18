@@ -1,0 +1,1 @@
+UPDATE users SET ip_address = ?, city = ? WHERE id = ?;

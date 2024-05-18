@@ -36,7 +36,7 @@ type ConfigModule struct {
 	// Path to the backup directory. This can be an absolute path or a path relative to the config dir
 	BackupsPath string `json:"backups_path" mapstructure:"backups_path"`
 
-	// If not empty this connection string will be used instead of the other fields
+	// If not empty this connection string will be used instead of the other fields, ex: file:test.db?cache=shared&mode=memory
 	ConnectionString string `json:"connection_string" mapstructure:"connection_string"`
 }
 

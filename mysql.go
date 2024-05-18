@@ -3,6 +3,7 @@ package dataprovider
 import (
 	"context"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -31,13 +32,11 @@ func (m *MySQLProvider) MigrateDatabase() error {
 }
 
 func (m *MySQLProvider) Disconnect() error {
-	//TODO implement me
-	panic("implement me")
+	return m.dbHandle.Close()
 }
 
 func (m *MySQLProvider) GetConnection() *sqlx.DB {
-	//TODO implement me
-	panic("implement me")
+	return m.dbHandle
 }
 
 func (m *MySQLProvider) CheckAvailability() error {
@@ -52,8 +51,8 @@ func (m *MySQLProvider) ReconnectDatabase() error {
 }
 
 func (m *MySQLProvider) InitializeDatabase(schema string) error {
-	//TODO implement me
-	panic("implement me")
+	_, err := m.dbHandle.Exec(schema)
+	return err
 }
 
 func (m *MySQLProvider) RevertDatabase(targetVersion int) error {
@@ -68,7 +67,7 @@ func (m *MySQLProvider) ResetDatabase() error {
 
 func newMySQLProvider(ctx context.Context, cfg *ConfigModule) (*MySQLProvider, error) {
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
-	dbHandle, err := sqlx.Connect("mysql", dataSourceName)
+	dbHandle, err := sqlx.Connect(MySQLDatabaseProviderName, dataSourceName)
 	if err != nil {
 		return nil, err
 	}

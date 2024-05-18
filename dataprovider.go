@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	"time"
+	"github.com/spf13/afero"
+	"path/filepath"
 )
 
 const (
 	// OracleDatabaseProviderName defines the name for Oracle database Provider
-	OracleDatabaseProviderName = "oracle"
+	OracleDatabaseProviderName = "godror"
 
 	// SQLiteDataProviderName defines the name for SQLite database Provider
 	SQLiteDataProviderName = "sqlite"
@@ -18,21 +19,10 @@ const (
 	MySQLDatabaseProviderName = "mysql"
 
 	// PostgreSQLDatabaseProviderName defines the name for PostgreSQL database Provider
-	PostgreSQLDatabaseProviderName = "postgresql"
+	PostgreSQLDatabaseProviderName = "postgres"
 
 	// MemoryDataProviderName defines the name for memory provider using SQLite in-memory database Provider
 	MemoryDataProviderName = "memory"
-)
-
-// ordering constants
-const (
-	OrderASC  = "ASC"
-	OrderDESC = "DESC"
-)
-
-const (
-	defaultSQLQueryTimeout = 10 * time.Second
-	longSQLQueryTimeout    = 60 * time.Second
 )
 
 var driverName string
@@ -73,7 +63,12 @@ type ProviderStatus struct {
 }
 
 // NewDataProvider creates a new data provider instance
-func NewDataProvider(ctx context.Context, cfg *ConfigModule) (Provider, error) {
+func NewDataProvider(cfg *ConfigModule) (Provider, error) {
+	return NewDataProviderContext(context.Background(), cfg)
+}
+
+// NewDataProviderContext creates a new data provider instance
+func NewDataProviderContext(ctx context.Context, cfg *ConfigModule) (Provider, error) {
 	driverName = cfg.Driver
 
 	switch driverName {
@@ -90,4 +85,33 @@ func NewDataProvider(ctx context.Context, cfg *ConfigModule) (Provider, error) {
 	}
 
 	return nil, fmt.Errorf("unsupported driver %s", driverName)
+}
+
+func GetQueryFromFile(filename string) (string, error) {
+	fs := afero.NewOsFs()
+
+	ok, err := afero.DirExists(fs, filepath.Dir(filename))
+	if err != nil {
+		return "", err
+	}
+
+	if !ok {
+		return "", fmt.Errorf("directory %s does not exist", filepath.Dir(filename))
+	}
+
+	ok, err = afero.Exists(fs, filename)
+	if err != nil {
+		return "", err
+	}
+
+	if !ok {
+		return "", fmt.Errorf("file %s does not exist", filename)
+	}
+
+	content, err := afero.ReadFile(fs, filename)
+	if err != nil {
+		return "", err
+	}
+
+	return string(content), nil
 }
