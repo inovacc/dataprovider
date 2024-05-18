@@ -1,3 +1,5 @@
+//go:build mysql
+
 package dataprovider
 
 import (
@@ -55,14 +57,14 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestNewDataProvider(t *testing.T) {
+func TestNewMySQLDataProvider(t *testing.T) {
 	provider, err := NewDataProvider(testCfg)
 	assert.NoError(t, err)
 
 	providerStatus := provider.GetProviderStatus()
 	assert.Equal(t, MySQLDatabaseProviderName, providerStatus.Driver)
 
-	query, err := GetQueryFromFile("testdata/create_user_table.sql")
+	query, err := GetQueryFromFile("testdata/mysql/create_user_table.sql")
 	assert.NoError(t, err)
 
 	if err = provider.InitializeDatabase(query); err != nil {
@@ -71,7 +73,7 @@ func TestNewDataProvider(t *testing.T) {
 
 	conn := provider.GetConnection()
 
-	query, err = GetQueryFromFile("testdata/insert_user.sql")
+	query, err = GetQueryFromFile("testdata/mysql/insert_user.sql")
 	assert.NoError(t, err)
 
 	tx := conn.MustBegin()
@@ -88,7 +90,7 @@ func TestNewDataProvider(t *testing.T) {
 		City      string `json:"city" db:"city"`
 	}
 
-	query, err = GetQueryFromFile("testdata/select_users.sql")
+	query, err = GetQueryFromFile("testdata/mysql/select_users.sql")
 	assert.NoError(t, err)
 
 	rows, err := conn.Queryx(query)
