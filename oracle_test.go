@@ -1,3 +1,5 @@
+//go:build windows
+
 package dataprovider
 
 import (
@@ -51,7 +53,11 @@ func prepareOracleContainer(t *testing.T) (*ConfigModule, testcontainers.Contain
 
 func TestNewOracleDataProvider(t *testing.T) {
 	testCfg, container := prepareOracleContainer(t)
-	defer container.Terminate(context.Background())
+	defer func(container testcontainers.Container, ctx context.Context) {
+		if err := container.Terminate(ctx); err != nil {
+			t.Fatalf("failed to terminate container: %s", err)
+		}
+	}(container, context.Background())
 
 	provider, err := NewDataProvider(testCfg)
 	assert.NoError(t, err)

@@ -51,7 +51,11 @@ func preparePostgresContainer(t *testing.T) (*ConfigModule, testcontainers.Conta
 
 func TestNewPostgresDataProvider(t *testing.T) {
 	testCfg, container := preparePostgresContainer(t)
-	defer container.Terminate(context.Background())
+	defer func(container testcontainers.Container, ctx context.Context) {
+		if err := container.Terminate(ctx); err != nil {
+			t.Fatalf("failed to terminate container: %s", err)
+		}
+	}(container, context.Background())
 
 	provider, err := NewDataProvider(testCfg)
 	assert.NoError(t, err)
