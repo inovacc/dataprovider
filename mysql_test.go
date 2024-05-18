@@ -32,14 +32,16 @@ func prepareMysqlContainer(t *testing.T) (*ConfigModule, testcontainers.Containe
 		t.Fatalf("Could not get mysql container port: %s", err)
 	}
 
-	return &ConfigModule{
-		Driver:   MySQLDatabaseProviderName,
-		Username: "test",
-		Password: "test",
-		Name:     "test",
-		Host:     host,
-		Port:     netPort.Int(),
-	}, mysqContainer
+	cfg := NewConfigModule().
+		WithDriver(MySQLDatabaseProviderName).
+		WithUsername("test").
+		WithPassword("test").
+		WithName("test").
+		WithHost(host).
+		WithPort(netPort.Int()).
+		Build()
+
+	return cfg, mysqContainer
 }
 
 func TestNewMySQLDataProvider(t *testing.T) {

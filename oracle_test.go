@@ -41,14 +41,16 @@ func prepareOracleContainer(t *testing.T) (*ConfigModule, testcontainers.Contain
 		t.Fatalf("Could not get oracle container port: %s", err)
 	}
 
-	return &ConfigModule{
-		Driver:   OracleDatabaseProviderName,
-		Username: "system",
-		Password: "oracle",
-		Name:     "xe",
-		Host:     host,
-		Port:     netPort.Int(),
-	}, oracleContainer
+	cfg := NewConfigModule().
+		WithDriver(OracleDatabaseProviderName).
+		WithUsername("system").
+		WithPassword("oracle").
+		WithName("xe").
+		WithHost(host).
+		WithPort(netPort.Int()).
+		Build()
+
+	return cfg, oracleContainer
 }
 
 func TestNewOracleDataProvider(t *testing.T) {

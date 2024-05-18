@@ -39,14 +39,16 @@ func preparePostgresContainer(t *testing.T) (*ConfigModule, testcontainers.Conta
 		t.Fatalf("Could not get mysql container port: %s", err)
 	}
 
-	return &ConfigModule{
-		Driver:   PostgreSQLDatabaseProviderName,
-		Username: "test",
-		Password: "test",
-		Name:     "test",
-		Host:     host,
-		Port:     netPort.Int(),
-	}, postgresContainer
+	cfg := NewConfigModule().
+		WithDriver(PostgreSQLDatabaseProviderName).
+		WithUsername("test").
+		WithPassword("test").
+		WithName("test").
+		WithHost(host).
+		WithPort(netPort.Int()).
+		Build()
+
+	return cfg, postgresContainer
 }
 
 func TestNewPostgresDataProvider(t *testing.T) {

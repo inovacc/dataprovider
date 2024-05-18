@@ -39,6 +39,45 @@ the excellent built-in [database/sql](https://pkg.go.dev/database/sql) package.
 
 ## How to use
 
+```shell
+go get github.com/dyammarcano/dataprovider
+```
+
+## Example of initialization
+```go
+package main
+
+import "github.com/dyammarcano/dataprovider"
+
+func main() {
+	// Create a config with driver name to initialize the data provider
+	cfg := dataprovider.NewConfigModule().
+		WithDriver(dataprovider.PostgreSQLDatabaseProviderName).
+		WithUsername("test").
+		WithPassword("test").
+		WithName("test").
+		WithHost("lohaslhost").
+		WithPort(5432).
+		Build()
+
+	provider, err := dataprovider.NewDataProvider(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	// Initialize the database
+	query := "CREATE TABLE IF NOT EXISTS ...;"
+	if err = provider.InitializeDatabase(query); err != nil {
+		panic(err)
+	}
+
+	// Get the connection
+	conn := provider.GetConnection()
+}
+```
+
+## Example of usage
+
 ```go
 package main
 
@@ -60,9 +99,9 @@ type User struct {
 
 func main() {
 	// Create a config with driver name to initialize the data provider
-	cfg := &dataprovider.ConfigModule{
-		Driver: dataprovider.MemoryDataProviderName,
-	}
+	cfg := dataprovider.NewConfigModule().
+		WithDriver(dataprovider.MemoryDataProviderName).
+		Build()
 
 	provider, err := dataprovider.NewDataProvider(cfg)
 	if err != nil {
