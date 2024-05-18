@@ -6,7 +6,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/afero"
 	"path/filepath"
-	"time"
 )
 
 const (
@@ -24,17 +23,6 @@ const (
 
 	// MemoryDataProviderName defines the name for memory provider using SQLite in-memory database Provider
 	MemoryDataProviderName = "memory"
-)
-
-// ordering constants
-const (
-	OrderASC  = "ASC"
-	OrderDESC = "DESC"
-)
-
-const (
-	defaultSQLQueryTimeout = 10 * time.Second
-	longSQLQueryTimeout    = 60 * time.Second
 )
 
 var driverName string
@@ -74,7 +62,7 @@ type ProviderStatus struct {
 	IsActive bool   `json:"is_active"`
 }
 
-// ConfigModule defines the configuration for the data provider
+// NewDataProvider creates a new data provider instance
 func NewDataProvider(cfg *ConfigModule) (Provider, error) {
 	return NewDataProviderContext(context.Background(), cfg)
 }

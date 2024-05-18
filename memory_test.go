@@ -1,3 +1,5 @@
+//go:build memory
+
 package dataprovider
 
 import (
@@ -16,7 +18,7 @@ func TestNewMemoryDataProvider(t *testing.T) {
 	providerStatus := provider.GetProviderStatus()
 	assert.Equal(t, MemoryDataProviderName, providerStatus.Driver)
 
-	query, err := GetQueryFromFile("testdata/create_user_table.sql")
+	query, err := GetQueryFromFile("testdata/sqlite/create_user_table.sql")
 	assert.NoError(t, err)
 
 	if err = provider.InitializeDatabase(query); err != nil {
@@ -25,7 +27,7 @@ func TestNewMemoryDataProvider(t *testing.T) {
 
 	conn := provider.GetConnection()
 
-	query, err = GetQueryFromFile("testdata/insert_user.sql")
+	query, err = GetQueryFromFile("testdata/sqlite/insert_user.sql")
 	assert.NoError(t, err)
 
 	tx := conn.MustBegin()
@@ -42,7 +44,7 @@ func TestNewMemoryDataProvider(t *testing.T) {
 		City      string `json:"city" db:"city"`
 	}
 
-	query, err = GetQueryFromFile("testdata/select_users.sql")
+	query, err = GetQueryFromFile("testdata/sqlite/select_users.sql")
 	assert.NoError(t, err)
 
 	rows, err := conn.Queryx(query)
