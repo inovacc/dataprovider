@@ -12,6 +12,7 @@ type SQLiteProvider struct {
 	dbHandle *sqlx.DB
 }
 
+// GetProviderStatus returns the status of the provider
 func (s *SQLiteProvider) GetProviderStatus() ProviderStatus {
 	status := ProviderStatus{
 		Driver:   driverName,
@@ -26,19 +27,23 @@ func (s *SQLiteProvider) GetProviderStatus() ProviderStatus {
 	return status
 }
 
+// MigrateDatabase migrates the database to the latest version
 func (s *SQLiteProvider) MigrateDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }
 
+// Disconnect disconnects from the data provider
 func (s *SQLiteProvider) Disconnect() error {
 	return s.dbHandle.Close()
 }
 
+// GetConnection returns the connection to the data provider
 func (s *SQLiteProvider) GetConnection() *sqlx.DB {
 	return s.dbHandle
 }
 
+// CheckAvailability checks if the data provider is available
 func (s *SQLiteProvider) CheckAvailability() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5)
 	defer cancel()
@@ -46,25 +51,30 @@ func (s *SQLiteProvider) CheckAvailability() error {
 	return s.dbHandle.PingContext(ctx)
 }
 
+// ReconnectDatabase reconnects to the database
 func (s *SQLiteProvider) ReconnectDatabase() error {
 	return s.CheckAvailability()
 }
 
+// InitializeDatabase initializes the database
 func (s *SQLiteProvider) InitializeDatabase(schema string) error {
 	_, err := s.dbHandle.Exec(schema)
 	return err
 }
 
+// RevertDatabase reverts the database to the specified version
 func (s *SQLiteProvider) RevertDatabase(targetVersion int) error {
 	//TODO implement me
 	panic("implement me")
 }
 
+// ResetDatabase resets the database
 func (s *SQLiteProvider) ResetDatabase() error {
 	//TODO implement me
 	panic("implement me")
 }
 
+// newSQLiteProvider creates a new SQLite provider instance
 func newSQLiteProvider(ctx context.Context, cfg *ConfigModule) (*SQLiteProvider, error) {
 	connectionString := cfg.ConnectionString
 

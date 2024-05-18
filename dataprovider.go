@@ -72,8 +72,13 @@ type ProviderStatus struct {
 	IsActive bool   `json:"is_active"`
 }
 
-// NewDataProvider creates a new data provider instance
-func NewDataProvider(ctx context.Context, cfg *ConfigModule) (Provider, error) {
+// ConfigModule defines the configuration for the data provider
+func NewDataProvider(cfg *ConfigModule) (Provider, error) {
+	return NewDataProviderContext(context.Background(), cfg)
+}
+
+// NewDataProviderContext creates a new data provider instance
+func NewDataProviderContext(ctx context.Context, cfg *ConfigModule) (Provider, error) {
 	driverName = cfg.Driver
 
 	switch driverName {
