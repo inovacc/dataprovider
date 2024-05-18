@@ -5,8 +5,8 @@
 
 # Dataprovider
 
-dataprovider is a module that provides a uniform interface to handle behind the scene with manu dtabases. It is designed
-to be used with the [jmoiron/sqlx](https://github.com/jmoiron/sqlx) package that provides a set of extensions on top of
+dataprovider is a module that provides a uniform interface to interact behind the scene with many databases and configurations. 
+On this design is used the [jmoiron/sqlx](https://github.com/jmoiron/sqlx) package that provides a set of extensions on top of
 the excellent built-in [database/sql](https://pkg.go.dev/database/sql) package.
 
 ## Working on
