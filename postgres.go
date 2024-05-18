@@ -67,7 +67,7 @@ func (p *PGSQLProvider) ResetDatabase() error {
 
 func newPostgreSQLProvider(ctx context.Context, cfg *ConfigModule) (*PGSQLProvider, error) {
 	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable", cfg.Username, cfg.Name, cfg.Password)
-	dbHandle, err := sqlx.Connect("postgres", dataSourceName)
+	dbHandle, err := sqlx.Connect(PostgreSQLDatabaseProviderName, dataSourceName)
 	if err != nil {
 		return nil, err
 	}

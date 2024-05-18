@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // SQLiteProvider defines the auth provider for SQLite database
@@ -82,7 +82,7 @@ func newSQLiteProvider(ctx context.Context, cfg *ConfigModule) (*SQLiteProvider,
 		connectionString = fmt.Sprintf("file:%s.db?cache=shared&_foreign_keys=1", cfg.Name)
 	}
 
-	dbHandle, err := sqlx.Connect("sqlite3", connectionString)
+	dbHandle, err := sqlx.Connect(SQLiteDataProviderName, connectionString)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,37 @@
 # Dataprovider
 
-a simple interface to provide data to a model in a way that is independent of the data source.
+dataprovider is a module that provides a uniform interface to handle behind the scene with manu dtabases. It is designed
+to be used with the [jmoiron/sqlx](https://github.com/jmoiron/sqlx) package that provides a set of extensions on top of
+the excellent built-in [database/sql](https://pkg.go.dev/database/sql) package.
+
+## Working on
+
+- [ ] Database Migration
+- [x] Database Connection
+- [x] Database Transaction
+- [x] Database Query
+- [x] Database QueryRow
+- [x] Database QueryRowx
+
+## Supported databases
+
+- [x] Memory
+- [x] SQLite3
+- [x] MySQL
+- [x] PostgreSQL
+- [ ] SQL Server
+- [x] Oracle
+- [ ] CockroachDB
+- [ ] ClickHouse
+- [ ] Cassandra
+- [ ] MongoDB
+- [ ] Redis
+- [ ] InfluxDB
+- [ ] Elasticsearch
+- [ ] BigQuery
+- [ ] Google Cloud Firestore
+- [ ] Google Cloud Spanner
+- [ ] Google Cloud Datastore
 
 ## How to use
 

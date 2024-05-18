@@ -3,7 +3,7 @@ package dataprovider
 import (
 	"context"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // MemoryProvider defines the auth provider for in-memory database
@@ -75,7 +75,7 @@ func (m *MemoryProvider) ResetDatabase() error {
 
 // newMemoryProvider creates a new memory provider
 func newMemoryProvider(ctx context.Context, cfg *ConfigModule) (*MemoryProvider, error) {
-	dbHandle, err := sqlx.Open("sqlite3", ":memory:")
+	dbHandle, err := sqlx.Open(SQLiteDataProviderName, ":memory:")
 	if err != nil {
 		return nil, err
 	}

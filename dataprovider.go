@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/spf13/afero"
+	"path/filepath"
 	"time"
 )
 
 const (
 	// OracleDatabaseProviderName defines the name for Oracle database Provider
-	OracleDatabaseProviderName = "oracle"
+	OracleDatabaseProviderName = "godror"
 
 	// SQLiteDataProviderName defines the name for SQLite database Provider
 	SQLiteDataProviderName = "sqlite"
@@ -18,7 +20,7 @@ const (
 	MySQLDatabaseProviderName = "mysql"
 
 	// PostgreSQLDatabaseProviderName defines the name for PostgreSQL database Provider
-	PostgreSQLDatabaseProviderName = "postgresql"
+	PostgreSQLDatabaseProviderName = "postgres"
 
 	// MemoryDataProviderName defines the name for memory provider using SQLite in-memory database Provider
 	MemoryDataProviderName = "memory"
@@ -95,4 +97,33 @@ func NewDataProviderContext(ctx context.Context, cfg *ConfigModule) (Provider, e
 	}
 
 	return nil, fmt.Errorf("unsupported driver %s", driverName)
+}
+
+func GetQueryFromFile(filename string) (string, error) {
+	fs := afero.NewOsFs()
+
+	ok, err := afero.DirExists(fs, filepath.Dir(filename))
+	if err != nil {
+		return "", err
+	}
+
+	if !ok {
+		return "", fmt.Errorf("directory %s does not exist", filepath.Dir(filename))
+	}
+
+	ok, err = afero.Exists(fs, filename)
+	if err != nil {
+		return "", err
+	}
+
+	if !ok {
+		return "", fmt.Errorf("file %s does not exist", filename)
+	}
+
+	content, err := afero.ReadFile(fs, filename)
+	if err != nil {
+		return "", err
+	}
+
+	return string(content), nil
 }

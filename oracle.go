@@ -68,7 +68,7 @@ func (o *ORASQLProvider) GetProviderStatus() ProviderStatus {
 
 func newOracleProvider(ctx context.Context, cfg *ConfigModule) (*ORASQLProvider, error) {
 	dataSourceName := fmt.Sprintf("%s/%s@%s:%d/%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
-	dbHandle, err := sqlx.Connect("godror", dataSourceName)
+	dbHandle, err := sqlx.Connect(OracleDatabaseProviderName, dataSourceName)
 	if err != nil {
 		return nil, err
 	}
