@@ -18,6 +18,9 @@ jobs:
         with:
           go-version: stable
 
+      - name: Add GOPATH/bin to PATH
+        run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
       - name: Install CycloneDX Golang Module SBOM Tool
         run: go get github.com/CycloneDX/cyclonedx-gomod@latest
 
