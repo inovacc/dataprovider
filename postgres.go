@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 // PGSQLProvider defines the auth provider for PostgreSQL database
@@ -31,8 +32,7 @@ func (p *PGSQLProvider) MigrateDatabase() error {
 }
 
 func (p *PGSQLProvider) Disconnect() error {
-	//TODO implement me
-	panic("implement me")
+	return p.dbHandle.Close()
 }
 
 func (p *PGSQLProvider) GetConnection() *sqlx.DB {
@@ -51,8 +51,8 @@ func (p *PGSQLProvider) ReconnectDatabase() error {
 }
 
 func (p *PGSQLProvider) InitializeDatabase(schema string) error {
-	//TODO implement me
-	panic("implement me")
+	_, err := p.dbHandle.Exec(schema)
+	return err
 }
 
 func (p *PGSQLProvider) RevertDatabase(targetVersion int) error {
@@ -66,7 +66,7 @@ func (p *PGSQLProvider) ResetDatabase() error {
 }
 
 func newPostgreSQLProvider(ctx context.Context, cfg *ConfigModule) (*PGSQLProvider, error) {
-	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable", cfg.Username, cfg.Name, cfg.Password)
+	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s port=%d host=%s sslmode=disable", cfg.Username, cfg.Name, cfg.Password, cfg.Port, cfg.Host)
 	dbHandle, err := sqlx.Connect(PostgreSQLDatabaseProviderName, dataSourceName)
 	if err != nil {
 		return nil, err

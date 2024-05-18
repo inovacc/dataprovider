@@ -1,5 +1,3 @@
-//go:build mysql
-
 package dataprovider
 
 import (
@@ -7,14 +5,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
-	"log"
-	"os"
 	"testing"
 )
 
-var testCfg *ConfigModule
-
-func TestMain(m *testing.M) {
+func prepareMysqlContainer(t *testing.T) (*ConfigModule, testcontainers.Container) {
 	ctx := context.Background()
 
 	mysqContainer, err := mysql.RunContainer(ctx, testcontainers.WithImage("mysql:8.4"),
@@ -24,40 +18,34 @@ func TestMain(m *testing.M) {
 	)
 
 	if err != nil {
-		log.Fatalf("Could not start mysql container: %s", err)
+		t.Fatalf("Could not start mysql container: %s", err)
 	}
-	// Clean up the container
-	defer func() {
-		if err = mysqContainer.Terminate(ctx); err != nil {
-			log.Fatalf("failed to terminate container: %s", err)
-		}
-	}()
 
 	// Get the container's host and port
 	host, err := mysqContainer.Host(ctx)
 	if err != nil {
-		log.Fatalf("Could not get mysql container host: %s", err)
+		t.Fatalf("Could not get mysql container host: %s", err)
 	}
 
 	netPort, err := mysqContainer.MappedPort(ctx, "3306")
 	if err != nil {
-		log.Fatalf("Could not get mysql container port: %s", err)
+		t.Fatalf("Could not get mysql container port: %s", err)
 	}
 
-	testCfg = &ConfigModule{
+	return &ConfigModule{
 		Driver:   MySQLDatabaseProviderName,
 		Username: "test",
 		Password: "test",
 		Name:     "test",
 		Host:     host,
 		Port:     netPort.Int(),
-	}
-
-	code := m.Run()
-	os.Exit(code)
+	}, mysqContainer
 }
 
 func TestNewMySQLDataProvider(t *testing.T) {
+	testCfg, container := prepareMysqlContainer(t)
+	defer container.Terminate(context.Background())
+
 	provider, err := NewDataProvider(testCfg)
 	assert.NoError(t, err)
 
