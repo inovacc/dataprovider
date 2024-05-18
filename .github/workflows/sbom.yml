@@ -18,14 +18,11 @@ jobs:
         with:
           go-version: stable
 
-      - name: Add GOPATH/bin to PATH
-        run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-
-      - name: Install CycloneDX Golang Module SBOM Tool
-        run: go get github.com/CycloneDX/cyclonedx-gomod@latest
-
       - name: Generate SBOM
-        run: cyclonedx-gomod mod -json -output sbom.json
+        uses: CycloneDX/gh-gomod-generate-sbom@v2
+        with:
+          version: v1
+          args: mod -licenses -json -output bom.json
 
       - name: Upload SBOM as artifact
         uses: actions/upload-artifact@v4
