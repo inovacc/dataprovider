@@ -1,27 +1,20 @@
-package dataprovider
+package provider
 
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
+	"github.com/testcontainers/testcontainers-go/modules/mysql"
 	"testing"
-	"time"
 )
 
-func preparePostgresContainer(t *testing.T) (*ConfigModule, testcontainers.Container) {
+func prepareMysqlContainer(t *testing.T) (*ConfigModule, testcontainers.Container) {
 	ctx := context.Background()
 
-	postgresContainer, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("postgres:16.3"),
-		postgres.WithDatabase("test"),
-		postgres.WithUsername("test"),
-		postgres.WithPassword("test"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
+	mysqContainer, err := mysql.RunContainer(ctx, testcontainers.WithImage("mysql:8.4"),
+		mysql.WithDatabase("test"),
+		mysql.WithUsername("test"),
+		mysql.WithPassword("test"),
 	)
 
 	if err != nil {
@@ -29,18 +22,18 @@ func preparePostgresContainer(t *testing.T) (*ConfigModule, testcontainers.Conta
 	}
 
 	// Get the container's host and port
-	host, err := postgresContainer.Host(ctx)
+	host, err := mysqContainer.Host(ctx)
 	if err != nil {
 		t.Fatalf("Could not get mysql container host: %s", err)
 	}
 
-	netPort, err := postgresContainer.MappedPort(ctx, "5432")
+	netPort, err := mysqContainer.MappedPort(ctx, "3306")
 	if err != nil {
 		t.Fatalf("Could not get mysql container port: %s", err)
 	}
 
 	cfg := NewConfigModule().
-		WithDriver(PostgreSQLDatabaseProviderName).
+		WithDriver(MySQLDatabaseProviderName).
 		WithUsername("test").
 		WithPassword("test").
 		WithName("test").
@@ -48,11 +41,11 @@ func preparePostgresContainer(t *testing.T) (*ConfigModule, testcontainers.Conta
 		WithPort(netPort.Int()).
 		Build()
 
-	return cfg, postgresContainer
+	return cfg, mysqContainer
 }
 
-func TestNewPostgresDataProvider(t *testing.T) {
-	testCfg, container := preparePostgresContainer(t)
+func TestNewMySQLDataProvider(t *testing.T) {
+	testCfg, container := prepareMysqlContainer(t)
 	defer func(container testcontainers.Container, ctx context.Context) {
 		if err := container.Terminate(ctx); err != nil {
 			t.Fatalf("failed to terminate container: %s", err)
@@ -63,9 +56,9 @@ func TestNewPostgresDataProvider(t *testing.T) {
 	assert.NoError(t, err)
 
 	providerStatus := provider.GetProviderStatus()
-	assert.Equal(t, PostgreSQLDatabaseProviderName, providerStatus.Driver)
+	assert.Equal(t, MySQLDatabaseProviderName, providerStatus.Driver)
 
-	query, err := GetQueryFromFile("testdata/postgres/create_user_table.sql")
+	query, err := GetQueryFromFile("testdata/mysql/create_user_table.sql")
 	assert.NoError(t, err)
 
 	if err = provider.InitializeDatabase(query); err != nil {
@@ -74,7 +67,7 @@ func TestNewPostgresDataProvider(t *testing.T) {
 
 	conn := provider.GetConnection()
 
-	query, err = GetQueryFromFile("testdata/postgres/insert_user.sql")
+	query, err = GetQueryFromFile("testdata/mysql/insert_user.sql")
 	assert.NoError(t, err)
 
 	tx := conn.MustBegin()
@@ -91,7 +84,7 @@ func TestNewPostgresDataProvider(t *testing.T) {
 		City      string `json:"city" db:"city"`
 	}
 
-	query, err = GetQueryFromFile("testdata/postgres/select_users.sql")
+	query, err = GetQueryFromFile("testdata/mysql/select_users.sql")
 	assert.NoError(t, err)
 
 	rows, err := conn.Queryx(query)

@@ -1,8 +1,9 @@
-package dataprovider
+package provider
 
 import (
 	"context"
 	"fmt"
+	"github.com/dyammarcano/dataprovider/internal/migration"
 	_ "github.com/godror/godror"
 	"github.com/jmoiron/sqlx"
 )
@@ -12,7 +13,7 @@ type ORASQLProvider struct {
 	dbHandle *sqlx.DB
 }
 
-func (o *ORASQLProvider) MigrateDatabase() error {
+func (o *ORASQLProvider) MigrateDatabase() migration.MigrationProvider {
 	//TODO implement me
 	panic("implement me")
 }
@@ -52,8 +53,8 @@ func (o *ORASQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func (o *ORASQLProvider) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
+func (o *ORASQLProvider) GetProviderStatus() Status {
+	status := Status{
 		Driver:   driverName,
 		IsActive: true,
 	}
@@ -66,15 +67,18 @@ func (o *ORASQLProvider) GetProviderStatus() ProviderStatus {
 	return status
 }
 
-func newOracleProvider(ctx context.Context, cfg *ConfigModule) (*ORASQLProvider, error) {
-	dataSourceName := fmt.Sprintf("%s/%s@%s:%d/%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
-	dbHandle, err := sqlx.Connect(OracleDatabaseProviderName, dataSourceName)
+func NewOracleProvider(ctx context.Context, options *Options) (*ORASQLProvider, error) {
+	driverName = OracleDatabaseProviderName
+	dataSourceName := fmt.Sprintf("%s/%s@%s:%d/%s",
+		options.Username, options.Password, options.Host, options.Port, options.Name)
+
+	dbHandle, err := sqlx.Connect("godror", dataSourceName)
 	if err != nil {
 		return nil, err
 	}
 
-	dbHandle.SetMaxOpenConns(cfg.PoolSize * 2)
-	dbHandle.SetMaxIdleConns(cfg.PoolSize)
+	dbHandle.SetMaxOpenConns(options.PoolSize * 2)
+	dbHandle.SetMaxIdleConns(options.PoolSize)
 
 	if err = dbHandle.PingContext(ctx); err != nil {
 		return nil, err

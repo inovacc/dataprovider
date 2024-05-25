@@ -1,60 +1,58 @@
-//go:build windows
-
-package dataprovider
+package provider
 
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"testing"
 	"time"
 )
 
-func prepareOracleContainer(t *testing.T) (*ConfigModule, testcontainers.Container) {
+func preparePostgresContainer(t *testing.T) (*ConfigModule, testcontainers.Container) {
 	ctx := context.Background()
 
-	req := testcontainers.ContainerRequest{
-		Image:        "gvenzl/oracle-free",
-		ExposedPorts: []string{"1521/tcp"},
-		Env:          map[string]string{"ORACLE_PASSWORD": "oracle"},
-		WaitingFor:   wait.ForLog("Database ready to use. Enjoy! ;)").WithStartupTimeout(10 * time.Minute),
-	}
-
-	oracleContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
+	postgresContainer, err := postgres.RunContainer(ctx,
+		testcontainers.WithImage("postgres:16.3"),
+		postgres.WithDatabase("test"),
+		postgres.WithUsername("test"),
+		postgres.WithPassword("test"),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(5*time.Second)),
+	)
 
 	if err != nil {
-		t.Fatalf("Could not start oracle container: %s", err)
+		t.Fatalf("Could not start mysql container: %s", err)
 	}
 
 	// Get the container's host and port
-	host, err := oracleContainer.Host(ctx)
+	host, err := postgresContainer.Host(ctx)
 	if err != nil {
-		t.Fatalf("Could not get oracle container host: %s", err)
+		t.Fatalf("Could not get mysql container host: %s", err)
 	}
 
-	netPort, err := oracleContainer.MappedPort(ctx, "1521")
+	netPort, err := postgresContainer.MappedPort(ctx, "5432")
 	if err != nil {
-		t.Fatalf("Could not get oracle container port: %s", err)
+		t.Fatalf("Could not get mysql container port: %s", err)
 	}
 
 	cfg := NewConfigModule().
-		WithDriver(OracleDatabaseProviderName).
-		WithUsername("system").
-		WithPassword("oracle").
-		WithName("xe").
+		WithDriver(PostgreSQLDatabaseProviderName).
+		WithUsername("test").
+		WithPassword("test").
+		WithName("test").
 		WithHost(host).
 		WithPort(netPort.Int()).
 		Build()
 
-	return cfg, oracleContainer
+	return cfg, postgresContainer
 }
 
-func TestNewOracleDataProvider(t *testing.T) {
-	testCfg, container := prepareOracleContainer(t)
+func TestNewPostgresDataProvider(t *testing.T) {
+	testCfg, container := preparePostgresContainer(t)
 	defer func(container testcontainers.Container, ctx context.Context) {
 		if err := container.Terminate(ctx); err != nil {
 			t.Fatalf("failed to terminate container: %s", err)
@@ -65,9 +63,9 @@ func TestNewOracleDataProvider(t *testing.T) {
 	assert.NoError(t, err)
 
 	providerStatus := provider.GetProviderStatus()
-	assert.Equal(t, OracleDatabaseProviderName, providerStatus.Driver)
+	assert.Equal(t, PostgreSQLDatabaseProviderName, providerStatus.Driver)
 
-	query, err := GetQueryFromFile("testdata/oracle/create_user_table.sql")
+	query, err := GetQueryFromFile("testdata/postgres/create_user_table.sql")
 	assert.NoError(t, err)
 
 	if err = provider.InitializeDatabase(query); err != nil {
@@ -76,7 +74,7 @@ func TestNewOracleDataProvider(t *testing.T) {
 
 	conn := provider.GetConnection()
 
-	query, err = GetQueryFromFile("testdata/oracle/insert_user.sql")
+	query, err = GetQueryFromFile("testdata/postgres/insert_user.sql")
 	assert.NoError(t, err)
 
 	tx := conn.MustBegin()
@@ -93,7 +91,7 @@ func TestNewOracleDataProvider(t *testing.T) {
 		City      string `json:"city" db:"city"`
 	}
 
-	query, err = GetQueryFromFile("testdata/oracle/select_users.sql")
+	query, err = GetQueryFromFile("testdata/postgres/select_users.sql")
 	assert.NoError(t, err)
 
 	rows, err := conn.Queryx(query)

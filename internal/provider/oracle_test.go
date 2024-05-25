@@ -1,51 +1,60 @@
-package dataprovider
+//go:build windows
+
+package provider
 
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/mysql"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"testing"
+	"time"
 )
 
-func prepareMysqlContainer(t *testing.T) (*ConfigModule, testcontainers.Container) {
+func prepareOracleContainer(t *testing.T) (*ConfigModule, testcontainers.Container) {
 	ctx := context.Background()
 
-	mysqContainer, err := mysql.RunContainer(ctx, testcontainers.WithImage("mysql:8.4"),
-		mysql.WithDatabase("test"),
-		mysql.WithUsername("test"),
-		mysql.WithPassword("test"),
-	)
+	req := testcontainers.ContainerRequest{
+		Image:        "gvenzl/oracle-free",
+		ExposedPorts: []string{"1521/tcp"},
+		Env:          map[string]string{"ORACLE_PASSWORD": "oracle"},
+		WaitingFor:   wait.ForLog("Database ready to use. Enjoy! ;)").WithStartupTimeout(10 * time.Minute),
+	}
+
+	oracleContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
 
 	if err != nil {
-		t.Fatalf("Could not start mysql container: %s", err)
+		t.Fatalf("Could not start oracle container: %s", err)
 	}
 
 	// Get the container's host and port
-	host, err := mysqContainer.Host(ctx)
+	host, err := oracleContainer.Host(ctx)
 	if err != nil {
-		t.Fatalf("Could not get mysql container host: %s", err)
+		t.Fatalf("Could not get oracle container host: %s", err)
 	}
 
-	netPort, err := mysqContainer.MappedPort(ctx, "3306")
+	netPort, err := oracleContainer.MappedPort(ctx, "1521")
 	if err != nil {
-		t.Fatalf("Could not get mysql container port: %s", err)
+		t.Fatalf("Could not get oracle container port: %s", err)
 	}
 
 	cfg := NewConfigModule().
-		WithDriver(MySQLDatabaseProviderName).
-		WithUsername("test").
-		WithPassword("test").
-		WithName("test").
+		WithDriver(OracleDatabaseProviderName).
+		WithUsername("system").
+		WithPassword("oracle").
+		WithName("xe").
 		WithHost(host).
 		WithPort(netPort.Int()).
 		Build()
 
-	return cfg, mysqContainer
+	return cfg, oracleContainer
 }
 
-func TestNewMySQLDataProvider(t *testing.T) {
-	testCfg, container := prepareMysqlContainer(t)
+func TestNewOracleDataProvider(t *testing.T) {
+	testCfg, container := prepareOracleContainer(t)
 	defer func(container testcontainers.Container, ctx context.Context) {
 		if err := container.Terminate(ctx); err != nil {
 			t.Fatalf("failed to terminate container: %s", err)
@@ -56,9 +65,9 @@ func TestNewMySQLDataProvider(t *testing.T) {
 	assert.NoError(t, err)
 
 	providerStatus := provider.GetProviderStatus()
-	assert.Equal(t, MySQLDatabaseProviderName, providerStatus.Driver)
+	assert.Equal(t, OracleDatabaseProviderName, providerStatus.Driver)
 
-	query, err := GetQueryFromFile("testdata/mysql/create_user_table.sql")
+	query, err := GetQueryFromFile("testdata/oracle/create_user_table.sql")
 	assert.NoError(t, err)
 
 	if err = provider.InitializeDatabase(query); err != nil {
@@ -67,7 +76,7 @@ func TestNewMySQLDataProvider(t *testing.T) {
 
 	conn := provider.GetConnection()
 
-	query, err = GetQueryFromFile("testdata/mysql/insert_user.sql")
+	query, err = GetQueryFromFile("testdata/oracle/insert_user.sql")
 	assert.NoError(t, err)
 
 	tx := conn.MustBegin()
@@ -84,7 +93,7 @@ func TestNewMySQLDataProvider(t *testing.T) {
 		City      string `json:"city" db:"city"`
 	}
 
-	query, err = GetQueryFromFile("testdata/mysql/select_users.sql")
+	query, err = GetQueryFromFile("testdata/oracle/select_users.sql")
 	assert.NoError(t, err)
 
 	rows, err := conn.Queryx(query)

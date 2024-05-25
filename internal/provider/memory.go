@@ -1,7 +1,8 @@
-package dataprovider
+package provider
 
 import (
 	"context"
+	"github.com/dyammarcano/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 	_ "modernc.org/sqlite"
 )
@@ -12,8 +13,8 @@ type MemoryProvider struct {
 }
 
 // GetProviderStatus returns the status of the provider
-func (m *MemoryProvider) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
+func (m *MemoryProvider) GetProviderStatus() Status {
+	status := Status{
 		Driver:   driverName,
 		IsActive: true,
 	}
@@ -27,7 +28,7 @@ func (m *MemoryProvider) GetProviderStatus() ProviderStatus {
 }
 
 // MigrateDatabase migrates the database to the latest version
-func (m *MemoryProvider) MigrateDatabase() error {
+func (m *MemoryProvider) MigrateDatabase() migration.MigrationProvider {
 	//TODO implement me
 	panic("implement me")
 }
@@ -61,7 +62,7 @@ func (m *MemoryProvider) InitializeDatabase(schema string) error {
 	return err
 }
 
-// MigrateDatabase migrates the database to the latest version
+// RevertDatabase migrates the database to the latest version
 func (m *MemoryProvider) RevertDatabase(targetVersion int) error {
 	//TODO implement me
 	panic("implement me")
@@ -73,9 +74,10 @@ func (m *MemoryProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-// newMemoryProvider creates a new memory provider
-func newMemoryProvider(ctx context.Context, cfg *ConfigModule) (*MemoryProvider, error) {
-	dbHandle, err := sqlx.Open(SQLiteDataProviderName, ":memory:")
+// NewMemoryProvider creates a new memory provider
+func NewMemoryProvider(ctx context.Context, options *Options) (*MemoryProvider, error) {
+	driverName = MemoryDataProviderName
+	dbHandle, err := sqlx.Open("sqlite", ":memory:")
 	if err != nil {
 		return nil, err
 	}

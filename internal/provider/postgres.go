@@ -1,8 +1,9 @@
-package dataprovider
+package provider
 
 import (
 	"context"
 	"fmt"
+	"github.com/dyammarcano/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -12,8 +13,8 @@ type PGSQLProvider struct {
 	dbHandle *sqlx.DB
 }
 
-func (p *PGSQLProvider) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
+func (p *PGSQLProvider) GetProviderStatus() Status {
+	status := Status{
 		Driver:   driverName,
 		IsActive: true,
 	}
@@ -26,7 +27,7 @@ func (p *PGSQLProvider) GetProviderStatus() ProviderStatus {
 	return status
 }
 
-func (p *PGSQLProvider) MigrateDatabase() error {
+func (p *PGSQLProvider) MigrateDatabase() migration.MigrationProvider {
 	//TODO implement me
 	panic("implement me")
 }
@@ -65,16 +66,19 @@ func (p *PGSQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newPostgreSQLProvider(ctx context.Context, cfg *ConfigModule) (*PGSQLProvider, error) {
-	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s port=%d host=%s sslmode=disable", cfg.Username, cfg.Name, cfg.Password, cfg.Port, cfg.Host)
-	dbHandle, err := sqlx.Connect(PostgreSQLDatabaseProviderName, dataSourceName)
+func NewPostgreSQLProvider(ctx context.Context, options *Options) (*PGSQLProvider, error) {
+	driverName = PostgreSQLDatabaseProviderName
+	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s port=%d host=%s sslmode=disable",
+		options.Username, options.Name, options.Password, options.Port, options.Host)
+
+	dbHandle, err := sqlx.Connect("postgres", dataSourceName)
 	if err != nil {
 		return nil, err
 	}
 
-	dbHandle.SetMaxOpenConns(cfg.PoolSize)
-	if cfg.PoolSize > 0 {
-		dbHandle.SetMaxIdleConns(cfg.PoolSize)
+	dbHandle.SetMaxOpenConns(options.PoolSize)
+	if options.PoolSize > 0 {
+		dbHandle.SetMaxIdleConns(options.PoolSize)
 	} else {
 		dbHandle.SetMaxIdleConns(2)
 	}

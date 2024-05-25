@@ -1,8 +1,9 @@
-package dataprovider
+package provider
 
 import (
 	"context"
 	"fmt"
+	"github.com/dyammarcano/dataprovider/internal/migration"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
@@ -12,8 +13,8 @@ type MySQLProvider struct {
 	dbHandle *sqlx.DB
 }
 
-func (m *MySQLProvider) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
+func (m *MySQLProvider) GetProviderStatus() Status {
+	status := Status{
 		Driver:   driverName,
 		IsActive: true,
 	}
@@ -26,7 +27,7 @@ func (m *MySQLProvider) GetProviderStatus() ProviderStatus {
 	return status
 }
 
-func (m *MySQLProvider) MigrateDatabase() error {
+func (m *MySQLProvider) MigrateDatabase() migration.MigrationProvider {
 	//TODO implement me
 	panic("implement me")
 }
@@ -65,16 +66,19 @@ func (m *MySQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newMySQLProvider(ctx context.Context, cfg *ConfigModule) (*MySQLProvider, error) {
-	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
-	dbHandle, err := sqlx.Connect(MySQLDatabaseProviderName, dataSourceName)
+func NewMySQLProvider(ctx context.Context, options *Options) (*MySQLProvider, error) {
+	driverName = MySQLDatabaseProviderName
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
+		options.Username, options.Password, options.Host, options.Port, options.Name)
+
+	dbHandle, err := sqlx.Connect("mysql", dataSourceName)
 	if err != nil {
 		return nil, err
 	}
 
-	dbHandle.SetMaxOpenConns(cfg.PoolSize)
-	if cfg.PoolSize > 0 {
-		dbHandle.SetMaxIdleConns(cfg.PoolSize)
+	dbHandle.SetMaxOpenConns(options.PoolSize)
+	if options.PoolSize > 0 {
+		dbHandle.SetMaxIdleConns(options.PoolSize)
 	} else {
 		dbHandle.SetMaxIdleConns(2)
 	}

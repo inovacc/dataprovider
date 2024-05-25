@@ -1,20 +1,22 @@
-package dataprovider
+package provider
 
 import (
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
-func TestNewMemoryDataProvider(t *testing.T) {
+func TestNewSQLiteDataProvider(t *testing.T) {
 	cfg := &ConfigModule{
-		Driver: MemoryDataProviderName,
+		Driver:           SQLiteDataProviderName,
+		ConnectionString: "file:test.sqlite3?cache=shared",
 	}
 
 	provider, err := NewDataProvider(cfg)
 	assert.NoError(t, err)
 
 	providerStatus := provider.GetProviderStatus()
-	assert.Equal(t, MemoryDataProviderName, providerStatus.Driver)
+	assert.Equal(t, SQLiteDataProviderName, providerStatus.Driver)
 
 	query, err := GetQueryFromFile("testdata/sqlite/create_user_table.sql")
 	assert.NoError(t, err)
@@ -61,4 +63,10 @@ func TestNewMemoryDataProvider(t *testing.T) {
 	}
 
 	assert.Equalf(t, 3, len(users), "Expected 3 users, got %d", len(users))
+
+	err = provider.Disconnect()
+	assert.NoError(t, err)
+
+	err = os.Remove("test.sqlite3")
+	assert.NoError(t, err)
 }

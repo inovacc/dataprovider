@@ -1,8 +1,9 @@
-package dataprovider
+package provider
 
 import (
 	"context"
 	"fmt"
+	"github.com/dyammarcano/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 	_ "modernc.org/sqlite"
 )
@@ -13,8 +14,8 @@ type SQLiteProvider struct {
 }
 
 // GetProviderStatus returns the status of the provider
-func (s *SQLiteProvider) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
+func (s *SQLiteProvider) GetProviderStatus() Status {
+	status := Status{
 		Driver:   driverName,
 		IsActive: true,
 	}
@@ -28,7 +29,7 @@ func (s *SQLiteProvider) GetProviderStatus() ProviderStatus {
 }
 
 // MigrateDatabase migrates the database to the latest version
-func (s *SQLiteProvider) MigrateDatabase() error {
+func (s *SQLiteProvider) MigrateDatabase() migration.MigrationProvider {
 	//TODO implement me
 	panic("implement me")
 }
@@ -74,15 +75,16 @@ func (s *SQLiteProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-// newSQLiteProvider creates a new SQLite provider instance
-func newSQLiteProvider(ctx context.Context, cfg *ConfigModule) (*SQLiteProvider, error) {
-	connectionString := cfg.ConnectionString
+// NewSQLiteProvider creates a new SQLite provider instance
+func NewSQLiteProvider(ctx context.Context, options *Options) (*SQLiteProvider, error) {
+	driverName = SQLiteDataProviderName
+	connectionString := options.ConnectionString
 
-	if cfg.ConnectionString == "" {
-		connectionString = fmt.Sprintf("file:%s.db?cache=shared&_foreign_keys=1", cfg.Name)
+	if options.ConnectionString == "" {
+		connectionString = fmt.Sprintf("file:%s.db?cache=shared&_foreign_keys=1", options.Name)
 	}
 
-	dbHandle, err := sqlx.Connect(SQLiteDataProviderName, connectionString)
+	dbHandle, err := sqlx.Connect("sqlite", connectionString)
 	if err != nil {
 		return nil, err
 	}
