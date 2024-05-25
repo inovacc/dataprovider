@@ -5,27 +5,27 @@ import (
 	"testing"
 )
 
-func TestNewPostgresDataProvider(t *testing.T) {
-	opts := NewOptions()
-	var postgresProvider = Must(NewDataProvider(opts))
+func TestNewMemoryProvider(t *testing.T) {
+	driverName := SQLiteDataProviderName
+	opts := NewOptions(WithDriver(driverName), WithConnectionString("file:test.sqlite3?cache=shared"))
+	var provider = Must(NewDataProvider(opts))
 
-	providerStatus := postgresProvider.GetProviderStatus()
-	if providerStatus.Driver != MemoryDataProviderName {
-		t.Errorf("Expected %s, got %s", MemoryDataProviderName, providerStatus.Driver)
+	if providerStatus := provider.GetProviderStatus(); providerStatus.Driver != driverName {
+		t.Errorf("Expected %s, got %s", driverName, providerStatus.Driver)
 	}
 
-	conn := postgresProvider.GetConnection()
+	conn := provider.GetConnection()
 
-	query, err := GetQueryFromFile("testdata/sqlite/create_user_table.sql")
+	query, err := GetQueryFromFile("internal/testdata/sqlite/create_user_table.sql")
 	if err != nil {
 		t.Errorf("Error %s", err)
 	}
 
-	if err = postgresProvider.InitializeDatabase(query); err != nil {
+	if err = provider.InitializeDatabase(query); err != nil {
 		panic(err)
 	}
 
-	query, err = GetQueryFromFile("testdata/sqlite/insert_user.sql")
+	query, err = GetQueryFromFile("internal/testdata/sqlite/insert_user.sql")
 	if err != nil {
 		t.Errorf("Error %s", err)
 	}

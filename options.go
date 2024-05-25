@@ -1,6 +1,9 @@
 package dataprovider
 
-import "github.com/dyammarcano/dataprovider/internal/provider"
+import (
+	"context"
+	"github.com/dyammarcano/dataprovider/internal/provider"
+)
 
 type OptionFunc func(*provider.Options)
 
@@ -64,9 +67,16 @@ func WithConnectionString(connectionString string) OptionFunc {
 	}
 }
 
+func WithContext(ctx context.Context) OptionFunc {
+	return func(o *provider.Options) {
+		o.Context = ctx
+	}
+}
+
 func defaultOptions() *provider.Options {
 	return &provider.Options{
-		Driver: MemoryDataProviderName,
+		Context: context.Background(),
+		Driver:  MemoryDataProviderName,
 	}
 }
 

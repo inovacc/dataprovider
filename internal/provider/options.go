@@ -1,5 +1,7 @@
 package provider
 
+import "context"
+
 type Options struct {
 	Driver           NamedProvider
 	Name             string
@@ -11,4 +13,5 @@ type Options struct {
 	SQLTablesPrefix  string
 	PoolSize         int
 	ConnectionString string
+	context.Context
 }

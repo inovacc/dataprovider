@@ -10,6 +10,7 @@ import (
 // MemoryProvider defines the auth provider for in-memory database
 type MemoryProvider struct {
 	dbHandle *sqlx.DB
+	context.Context
 }
 
 // GetProviderStatus returns the status of the provider
@@ -45,7 +46,7 @@ func (m *MemoryProvider) GetConnection() *sqlx.DB {
 
 // CheckAvailability checks if the data provider is available
 func (m *MemoryProvider) CheckAvailability() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5)
+	ctx, cancel := context.WithTimeout(m.Context, 5)
 	defer cancel()
 
 	return m.dbHandle.PingContext(ctx)
@@ -75,16 +76,19 @@ func (m *MemoryProvider) ResetDatabase() error {
 }
 
 // NewMemoryProvider creates a new memory provider
-func NewMemoryProvider(ctx context.Context, options *Options) (*MemoryProvider, error) {
+func NewMemoryProvider(options *Options) (*MemoryProvider, error) {
 	driverName = MemoryDataProviderName
 	dbHandle, err := sqlx.Open("sqlite", ":memory:")
 	if err != nil {
 		return nil, err
 	}
 
-	if err = dbHandle.PingContext(ctx); err != nil {
+	if err = dbHandle.PingContext(options.Context); err != nil {
 		return nil, err
 	}
 
-	return &MemoryProvider{dbHandle: dbHandle}, nil
+	return &MemoryProvider{
+		dbHandle: dbHandle,
+		Context:  options.Context,
+	}, nil
 }

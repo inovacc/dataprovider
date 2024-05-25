@@ -11,6 +11,7 @@ import (
 // MySQLProvider defines the auth provider for MySQL/MariaDB database
 type MySQLProvider struct {
 	dbHandle *sqlx.DB
+	context.Context
 }
 
 func (m *MySQLProvider) GetProviderStatus() Status {
@@ -41,7 +42,7 @@ func (m *MySQLProvider) GetConnection() *sqlx.DB {
 }
 
 func (m *MySQLProvider) CheckAvailability() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5)
+	ctx, cancel := context.WithTimeout(m.Context, 5)
 	defer cancel()
 
 	return m.dbHandle.PingContext(ctx)
@@ -66,7 +67,7 @@ func (m *MySQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func NewMySQLProvider(ctx context.Context, options *Options) (*MySQLProvider, error) {
+func NewMySQLProvider(options *Options) (*MySQLProvider, error) {
 	driverName = MySQLDatabaseProviderName
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
 		options.Username, options.Password, options.Host, options.Port, options.Name)
@@ -83,9 +84,12 @@ func NewMySQLProvider(ctx context.Context, options *Options) (*MySQLProvider, er
 		dbHandle.SetMaxIdleConns(2)
 	}
 
-	if err = dbHandle.PingContext(ctx); err != nil {
+	if err = dbHandle.PingContext(options.Context); err != nil {
 		return nil, err
 	}
 
-	return &MySQLProvider{dbHandle: dbHandle}, nil
+	return &MySQLProvider{
+		dbHandle: dbHandle,
+		Context:  options.Context,
+	}, nil
 }

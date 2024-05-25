@@ -1,7 +1,6 @@
 package dataprovider
 
 import (
-	"context"
 	"fmt"
 	"github.com/dyammarcano/dataprovider/internal/migration"
 	"github.com/dyammarcano/dataprovider/internal/provider"
@@ -60,22 +59,17 @@ type Provider interface {
 
 // NewDataProvider creates a new data provider instance
 func NewDataProvider(options *provider.Options) (Provider, error) {
-	return NewDataProviderContext(context.Background(), options)
-}
-
-// NewDataProviderContext creates a new data provider instance
-func NewDataProviderContext(ctx context.Context, options *provider.Options) (Provider, error) {
 	switch options.Driver {
 	case OracleDatabaseProviderName:
-		return provider.NewOracleProvider(ctx, options)
+		return provider.NewOracleProvider(options)
 	case SQLiteDataProviderName:
-		return provider.NewSQLiteProvider(ctx, options)
+		return provider.NewSQLiteProvider(options)
 	case MySQLDatabaseProviderName:
-		return provider.NewMySQLProvider(ctx, options)
+		return provider.NewMySQLProvider(options)
 	case PostgreSQLDatabaseProviderName:
-		return provider.NewPostgreSQLProvider(ctx, options)
+		return provider.NewPostgreSQLProvider(options)
 	case MemoryDataProviderName:
-		return provider.NewMemoryProvider(ctx, options)
+		return provider.NewMemoryProvider(options)
 	}
 
 	return nil, fmt.Errorf("unsupported driver %s", options.Driver)

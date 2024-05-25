@@ -11,6 +11,7 @@ import (
 // SQLiteProvider defines the auth provider for SQLite database
 type SQLiteProvider struct {
 	dbHandle *sqlx.DB
+	context.Context
 }
 
 // GetProviderStatus returns the status of the provider
@@ -46,7 +47,7 @@ func (s *SQLiteProvider) GetConnection() *sqlx.DB {
 
 // CheckAvailability checks if the data provider is available
 func (s *SQLiteProvider) CheckAvailability() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5)
+	ctx, cancel := context.WithTimeout(s.Context, 5)
 	defer cancel()
 
 	return s.dbHandle.PingContext(ctx)
@@ -76,24 +77,26 @@ func (s *SQLiteProvider) ResetDatabase() error {
 }
 
 // NewSQLiteProvider creates a new SQLite provider instance
-func NewSQLiteProvider(ctx context.Context, options *Options) (*SQLiteProvider, error) {
+func NewSQLiteProvider(options *Options) (*SQLiteProvider, error) {
 	driverName = SQLiteDataProviderName
-	connectionString := options.ConnectionString
 
 	if options.ConnectionString == "" {
-		connectionString = fmt.Sprintf("file:%s.db?cache=shared&_foreign_keys=1", options.Name)
+		return nil, fmt.Errorf("missing connection string")
 	}
 
-	dbHandle, err := sqlx.Connect("sqlite", connectionString)
+	dbHandle, err := sqlx.Connect("sqlite", options.ConnectionString)
 	if err != nil {
 		return nil, err
 	}
 
 	dbHandle.SetMaxOpenConns(1)
 
-	if err = dbHandle.PingContext(ctx); err != nil {
+	if err = dbHandle.PingContext(options.Context); err != nil {
 		return nil, err
 	}
 
-	return &SQLiteProvider{dbHandle: dbHandle}, nil
+	return &SQLiteProvider{
+		dbHandle: dbHandle,
+		Context:  options.Context,
+	}, nil
 }

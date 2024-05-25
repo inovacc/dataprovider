@@ -11,6 +11,7 @@ import (
 // PGSQLProvider defines the auth provider for PostgreSQL database
 type PGSQLProvider struct {
 	dbHandle *sqlx.DB
+	context.Context
 }
 
 func (p *PGSQLProvider) GetProviderStatus() Status {
@@ -41,7 +42,7 @@ func (p *PGSQLProvider) GetConnection() *sqlx.DB {
 }
 
 func (p *PGSQLProvider) CheckAvailability() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5)
+	ctx, cancel := context.WithTimeout(p.Context, 5)
 	defer cancel()
 
 	return p.dbHandle.PingContext(ctx)
@@ -66,7 +67,7 @@ func (p *PGSQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func NewPostgreSQLProvider(ctx context.Context, options *Options) (*PGSQLProvider, error) {
+func NewPostgreSQLProvider(options *Options) (*PGSQLProvider, error) {
 	driverName = PostgreSQLDatabaseProviderName
 	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s port=%d host=%s sslmode=disable",
 		options.Username, options.Name, options.Password, options.Port, options.Host)
@@ -83,9 +84,12 @@ func NewPostgreSQLProvider(ctx context.Context, options *Options) (*PGSQLProvide
 		dbHandle.SetMaxIdleConns(2)
 	}
 
-	if err = dbHandle.PingContext(ctx); err != nil {
+	if err = dbHandle.PingContext(options.Context); err != nil {
 		return nil, err
 	}
 
-	return &PGSQLProvider{dbHandle: dbHandle}, nil
+	return &PGSQLProvider{
+		dbHandle: dbHandle,
+		Context:  options.Context,
+	}, nil
 }
