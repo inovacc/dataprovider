@@ -69,9 +69,8 @@ import "github.com/dyammarcano/dataprovider"
 func main() {
 	// Create a config with driver name to initialize the data provider
 	opts := dataprovider.NewOptions(
-		dataprovider.WithDriver(
-			dataprovider.SQLiteDataProviderName), 
-			dataprovider.WithConnectionString("file:test.sqlite3?cache=shared"),
+		    dataprovider.WithDriver(dataprovider.SQLiteDataProviderName), 
+		    dataprovider.WithConnectionString("file:test.sqlite3?cache=shared"), 
 		)
 	
 	var provider = dataprovider.Must(dataprovider.NewDataProvider(opts))
@@ -111,10 +110,9 @@ type User struct {
 func main() {
 	// Create a config with driver name to initialize the data provider
 	opts := dataprovider.NewOptions(
-		dataprovider.WithDriver(
-			dataprovider.MemoryDataProviderName),
-		dataprovider.WithConnectionString("file:test.sqlite3?cache=shared"),
-	)
+		    dataprovider.WithDriver(dataprovider.MemoryDataProviderName),
+		    dataprovider.WithConnectionString("file:test.sqlite3?cache=shared"),
+		)
 
 	var provider = dataprovider.Must(dataprovider.NewDataProvider(opts))
 
