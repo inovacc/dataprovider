@@ -6,8 +6,8 @@ import (
 )
 
 func TestNewMemoryProvider(t *testing.T) {
-	driverName := SQLiteDataProviderName
-	opts := NewOptions(WithDriver(driverName), WithConnectionString("file:test.sqlite3?cache=shared"))
+	driverName := MemoryDataProviderName
+	opts := NewOptions(WithDriver(driverName))
 	var provider = Must(NewDataProvider(opts))
 
 	if providerStatus := provider.GetProviderStatus(); providerStatus.Driver != driverName {
