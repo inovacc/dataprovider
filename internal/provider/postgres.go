@@ -1,8 +1,11 @@
-package dataprovider
+//go:build postgres
+
+package provider
 
 import (
 	"context"
 	"fmt"
+	"github.com/dyammarcano/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -10,10 +13,11 @@ import (
 // PGSQLProvider defines the auth provider for PostgreSQL database
 type PGSQLProvider struct {
 	dbHandle *sqlx.DB
+	context.Context
 }
 
-func (p *PGSQLProvider) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
+func (p *PGSQLProvider) GetProviderStatus() Status {
+	status := Status{
 		Driver:   driverName,
 		IsActive: true,
 	}
@@ -26,7 +30,7 @@ func (p *PGSQLProvider) GetProviderStatus() ProviderStatus {
 	return status
 }
 
-func (p *PGSQLProvider) MigrateDatabase() error {
+func (p *PGSQLProvider) MigrateDatabase() migration.MigrationProvider {
 	//TODO implement me
 	panic("implement me")
 }
@@ -40,7 +44,7 @@ func (p *PGSQLProvider) GetConnection() *sqlx.DB {
 }
 
 func (p *PGSQLProvider) CheckAvailability() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5)
+	ctx, cancel := context.WithTimeout(p.Context, 5)
 	defer cancel()
 
 	return p.dbHandle.PingContext(ctx)
@@ -65,23 +69,30 @@ func (p *PGSQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func newPostgreSQLProvider(ctx context.Context, cfg *ConfigModule) (*PGSQLProvider, error) {
-	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s port=%d host=%s sslmode=disable", cfg.Username, cfg.Name, cfg.Password, cfg.Port, cfg.Host)
-	dbHandle, err := sqlx.Connect(PostgreSQLDatabaseProviderName, dataSourceName)
+// NewPostgreSQLProvider creates a new PostgreSQL provider instance
+func NewPostgreSQLProvider(options *Options) (*PGSQLProvider, error) {
+	driverName = PostgreSQLDatabaseProviderName
+	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s port=%d host=%s sslmode=disable",
+		options.Username, options.Name, options.Password, options.Port, options.Host)
+
+	dbHandle, err := sqlx.Connect("postgres", dataSourceName)
 	if err != nil {
 		return nil, err
 	}
 
-	dbHandle.SetMaxOpenConns(cfg.PoolSize)
-	if cfg.PoolSize > 0 {
-		dbHandle.SetMaxIdleConns(cfg.PoolSize)
+	dbHandle.SetMaxOpenConns(options.PoolSize)
+	if options.PoolSize > 0 {
+		dbHandle.SetMaxIdleConns(options.PoolSize)
 	} else {
 		dbHandle.SetMaxIdleConns(2)
 	}
 
-	if err = dbHandle.PingContext(ctx); err != nil {
+	if err = dbHandle.PingContext(options.Context); err != nil {
 		return nil, err
 	}
 
-	return &PGSQLProvider{dbHandle: dbHandle}, nil
+	return &PGSQLProvider{
+		dbHandle: dbHandle,
+		Context:  options.Context,
+	}, nil
 }

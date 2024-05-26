@@ -9,6 +9,8 @@ dataprovider is a module that provides a uniform interface to interact behind th
 On this design is used the [jmoiron/sqlx](https://github.com/jmoiron/sqlx) package that provides a set of extensions on top of
 the excellent built-in [database/sql](https://pkg.go.dev/database/sql) package.
 
+The dataprovider in `memory` and `sqlite` uses `modernc.org/sqlite` package that is a `CGO` free SQLite3 driver for Go.
+
 ## Working on
 
 - [ ] Database Migration
@@ -44,6 +46,20 @@ the excellent built-in [database/sql](https://pkg.go.dev/database/sql) package.
 go get github.com/dyammarcano/dataprovider
 ```
 
+Need to build with the tag `mysql`, `postgres`, or `oracle` to use the specific database. Default driver is `sqlite` in `memory` mode all data is lost when the program ends.
+
+```shell
+go build -tags mysql
+```
+
+```shell
+go build -tags postgres
+```
+
+```shell
+go build -tags oracle
+```
+
 ## Example of initialization
 ```go
 package main
@@ -52,27 +68,21 @@ import "github.com/dyammarcano/dataprovider"
 
 func main() {
 	// Create a config with driver name to initialize the data provider
-	cfg := dataprovider.NewConfigModule().
-		WithDriver(dataprovider.PostgreSQLDatabaseProviderName).
-		WithUsername("test").
-		WithPassword("test").
-		WithName("test").
-		WithHost("lohaslhost").
-		WithPort(5432).
-		Build()
-
-	provider, err := dataprovider.NewDataProvider(cfg)
-	if err != nil {
-		panic(err)
-	}
+	opts := dataprovider.NewOptions(
+		dataprovider.WithDriver(
+			dataprovider.SQLiteDataProviderName), 
+			dataprovider.WithConnectionString("file:test.sqlite3?cache=shared"),
+		)
+	
+	var provider = dataprovider.Must(dataprovider.NewDataProvider(opts))
 
 	// Initialize the database
 	query := "CREATE TABLE IF NOT EXISTS ...;"
-	if err = provider.InitializeDatabase(query); err != nil {
+	if err := provider.InitializeDatabase(query); err != nil {
 		panic(err)
 	}
 
-	// Get the connection
+	// Get the connection and use it as sqlx.DB or sql.DB
 	conn := provider.GetConnection()
 }
 ```
@@ -100,18 +110,17 @@ type User struct {
 
 func main() {
 	// Create a config with driver name to initialize the data provider
-	cfg := dataprovider.NewConfigModule().
-		WithDriver(dataprovider.MemoryDataProviderName).
-		Build()
+	opts := dataprovider.NewOptions(
+		dataprovider.WithDriver(
+			dataprovider.MemoryDataProviderName),
+		dataprovider.WithConnectionString("file:test.sqlite3?cache=shared"),
+	)
 
-	provider, err := dataprovider.NewDataProvider(cfg)
-	if err != nil {
-		panic(err)
-	}
+	var provider = dataprovider.Must(dataprovider.NewDataProvider(opts))
 
 	// Initialize the database
 	query := "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, first_name TEXT, last_name TEXT, email TEXT, gender TEXT, ip_address TEXT, city TEXT);"
-	if err = provider.InitializeDatabase(query); err != nil {
+	if err := provider.InitializeDatabase(query); err != nil {
 		panic(err)
 	}
 

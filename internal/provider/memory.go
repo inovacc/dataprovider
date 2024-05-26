@@ -1,7 +1,8 @@
-package dataprovider
+package provider
 
 import (
 	"context"
+	"github.com/dyammarcano/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 	_ "modernc.org/sqlite"
 )
@@ -9,11 +10,12 @@ import (
 // MemoryProvider defines the auth provider for in-memory database
 type MemoryProvider struct {
 	dbHandle *sqlx.DB
+	context.Context
 }
 
 // GetProviderStatus returns the status of the provider
-func (m *MemoryProvider) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
+func (m *MemoryProvider) GetProviderStatus() Status {
+	status := Status{
 		Driver:   driverName,
 		IsActive: true,
 	}
@@ -27,7 +29,7 @@ func (m *MemoryProvider) GetProviderStatus() ProviderStatus {
 }
 
 // MigrateDatabase migrates the database to the latest version
-func (m *MemoryProvider) MigrateDatabase() error {
+func (m *MemoryProvider) MigrateDatabase() migration.MigrationProvider {
 	//TODO implement me
 	panic("implement me")
 }
@@ -44,7 +46,7 @@ func (m *MemoryProvider) GetConnection() *sqlx.DB {
 
 // CheckAvailability checks if the data provider is available
 func (m *MemoryProvider) CheckAvailability() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5)
+	ctx, cancel := context.WithTimeout(m.Context, 5)
 	defer cancel()
 
 	return m.dbHandle.PingContext(ctx)
@@ -61,7 +63,7 @@ func (m *MemoryProvider) InitializeDatabase(schema string) error {
 	return err
 }
 
-// MigrateDatabase migrates the database to the latest version
+// RevertDatabase migrates the database to the latest version
 func (m *MemoryProvider) RevertDatabase(targetVersion int) error {
 	//TODO implement me
 	panic("implement me")
@@ -73,16 +75,20 @@ func (m *MemoryProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-// newMemoryProvider creates a new memory provider
-func newMemoryProvider(ctx context.Context, cfg *ConfigModule) (*MemoryProvider, error) {
-	dbHandle, err := sqlx.Open(SQLiteDataProviderName, ":memory:")
+// NewMemoryProvider creates a new memory provider instance
+func NewMemoryProvider(options *Options) (*MemoryProvider, error) {
+	driverName = MemoryDataProviderName
+	dbHandle, err := sqlx.Open("sqlite", ":memory:")
 	if err != nil {
 		return nil, err
 	}
 
-	if err = dbHandle.PingContext(ctx); err != nil {
+	if err = dbHandle.PingContext(options.Context); err != nil {
 		return nil, err
 	}
 
-	return &MemoryProvider{dbHandle: dbHandle}, nil
+	return &MemoryProvider{
+		dbHandle: dbHandle,
+		Context:  options.Context,
+	}, nil
 }

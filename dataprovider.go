@@ -1,8 +1,9 @@
 package dataprovider
 
 import (
-	"context"
 	"fmt"
+	"github.com/dyammarcano/dataprovider/internal/migration"
+	"github.com/dyammarcano/dataprovider/internal/provider"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/afero"
 	"path/filepath"
@@ -10,22 +11,22 @@ import (
 
 const (
 	// OracleDatabaseProviderName defines the name for Oracle database Provider
-	OracleDatabaseProviderName = "godror"
+	OracleDatabaseProviderName = provider.OracleDatabaseProviderName
 
 	// SQLiteDataProviderName defines the name for SQLite database Provider
-	SQLiteDataProviderName = "sqlite"
+	SQLiteDataProviderName = provider.SQLiteDataProviderName
 
 	// MySQLDatabaseProviderName defines the name for MySQL database Provider
-	MySQLDatabaseProviderName = "mysql"
+	MySQLDatabaseProviderName = provider.MySQLDatabaseProviderName
 
 	// PostgreSQLDatabaseProviderName defines the name for PostgreSQL database Provider
-	PostgreSQLDatabaseProviderName = "postgres"
+	PostgreSQLDatabaseProviderName = provider.PostgreSQLDatabaseProviderName
 
 	// MemoryDataProviderName defines the name for memory provider using SQLite in-memory database Provider
-	MemoryDataProviderName = "memory"
+	MemoryDataProviderName = provider.MemoryDataProviderName
 )
 
-var driverName string
+type Status = provider.Status
 
 type Provider interface {
 	// Disconnect disconnects from the data provider
@@ -44,7 +45,7 @@ type Provider interface {
 	InitializeDatabase(schema string) error
 
 	// MigrateDatabase migrates the database to the latest version
-	MigrateDatabase() error
+	MigrateDatabase() migration.MigrationProvider
 
 	// RevertDatabase reverts the database to the specified version
 	RevertDatabase(targetVersion int) error
@@ -53,38 +54,35 @@ type Provider interface {
 	ResetDatabase() error
 
 	// GetProviderStatus returns the status of the provider
-	GetProviderStatus() ProviderStatus
-}
-
-type ProviderStatus struct {
-	Driver   string `json:"driver"`
-	Error    error  `json:"error"`
-	IsActive bool   `json:"is_active"`
+	GetProviderStatus() Status
 }
 
 // NewDataProvider creates a new data provider instance
-func NewDataProvider(cfg *ConfigModule) (Provider, error) {
-	return NewDataProviderContext(context.Background(), cfg)
-}
-
-// NewDataProviderContext creates a new data provider instance
-func NewDataProviderContext(ctx context.Context, cfg *ConfigModule) (Provider, error) {
-	driverName = cfg.Driver
-
-	switch driverName {
+func NewDataProvider(options *provider.Options) (Provider, error) {
+	switch options.Driver {
 	case OracleDatabaseProviderName:
-		return newOracleProvider(ctx, cfg)
+		return provider.NewOracleProvider(options)
 	case SQLiteDataProviderName:
-		return newSQLiteProvider(ctx, cfg)
+		return provider.NewSQLiteProvider(options)
 	case MySQLDatabaseProviderName:
-		return newMySQLProvider(ctx, cfg)
+		return provider.NewMySQLProvider(options)
 	case PostgreSQLDatabaseProviderName:
-		return newPostgreSQLProvider(ctx, cfg)
+		return provider.NewPostgreSQLProvider(options)
 	case MemoryDataProviderName:
-		return newMemoryProvider(ctx, cfg)
+		return provider.NewMemoryProvider(options)
 	}
 
-	return nil, fmt.Errorf("unsupported driver %s", driverName)
+	return nil, fmt.Errorf("unsupported driver %s", options.Driver)
+}
+
+// Must panics if the error is not nil
+//
+// Otherwise, it returns the provider instance with the corresponding implementation
+func Must(provider Provider, err error) Provider {
+	if err != nil {
+		panic(err)
+	}
+	return provider
 }
 
 func GetQueryFromFile(filename string) (string, error) {

@@ -1,8 +1,11 @@
-package dataprovider
+//go:build oracle
+
+package provider
 
 import (
 	"context"
 	"fmt"
+	"github.com/dyammarcano/dataprovider/internal/migration"
 	_ "github.com/godror/godror"
 	"github.com/jmoiron/sqlx"
 )
@@ -10,9 +13,10 @@ import (
 // ORASQLProvider defines the auth provider for Oracle database
 type ORASQLProvider struct {
 	dbHandle *sqlx.DB
+	context.Context
 }
 
-func (o *ORASQLProvider) MigrateDatabase() error {
+func (o *ORASQLProvider) MigrateDatabase() migration.MigrationProvider {
 	//TODO implement me
 	panic("implement me")
 }
@@ -27,7 +31,7 @@ func (o *ORASQLProvider) GetConnection() *sqlx.DB {
 }
 
 func (o *ORASQLProvider) CheckAvailability() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5)
+	ctx, cancel := context.WithTimeout(o.Context, 5)
 	defer cancel()
 
 	return o.dbHandle.PingContext(ctx)
@@ -52,8 +56,8 @@ func (o *ORASQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-func (o *ORASQLProvider) GetProviderStatus() ProviderStatus {
-	status := ProviderStatus{
+func (o *ORASQLProvider) GetProviderStatus() Status {
+	status := Status{
 		Driver:   driverName,
 		IsActive: true,
 	}
@@ -66,19 +70,26 @@ func (o *ORASQLProvider) GetProviderStatus() ProviderStatus {
 	return status
 }
 
-func newOracleProvider(ctx context.Context, cfg *ConfigModule) (*ORASQLProvider, error) {
-	dataSourceName := fmt.Sprintf("%s/%s@%s:%d/%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
-	dbHandle, err := sqlx.Connect(OracleDatabaseProviderName, dataSourceName)
+// NewOracleProvider creates a new Oracle provider instance
+func NewOracleProvider(options *Options) (*ORASQLProvider, error) {
+	driverName = OracleDatabaseProviderName
+	dataSourceName := fmt.Sprintf("%s/%s@%s:%d/%s",
+		options.Username, options.Password, options.Host, options.Port, options.Name)
+
+	dbHandle, err := sqlx.Connect("godror", dataSourceName)
 	if err != nil {
 		return nil, err
 	}
 
-	dbHandle.SetMaxOpenConns(cfg.PoolSize * 2)
-	dbHandle.SetMaxIdleConns(cfg.PoolSize)
+	dbHandle.SetMaxOpenConns(options.PoolSize * 2)
+	dbHandle.SetMaxIdleConns(options.PoolSize)
 
-	if err = dbHandle.PingContext(ctx); err != nil {
+	if err = dbHandle.PingContext(options.Context); err != nil {
 		return nil, err
 	}
 
-	return &ORASQLProvider{dbHandle: dbHandle}, nil
+	return &ORASQLProvider{
+		dbHandle: dbHandle,
+		Context:  options.Context,
+	}, nil
 }
