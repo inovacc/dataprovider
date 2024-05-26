@@ -1,3 +1,5 @@
+//go:build oracle
+
 package provider
 
 import (
@@ -68,6 +70,7 @@ func (o *ORASQLProvider) GetProviderStatus() Status {
 	return status
 }
 
+// NewOracleProvider creates a new Oracle provider instance
 func NewOracleProvider(options *Options) (*ORASQLProvider, error) {
 	driverName = OracleDatabaseProviderName
 	dataSourceName := fmt.Sprintf("%s/%s@%s:%d/%s",

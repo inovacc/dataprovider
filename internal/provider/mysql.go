@@ -1,3 +1,5 @@
+//go:build mysql
+
 package provider
 
 import (
@@ -67,6 +69,7 @@ func (m *MySQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
+// NewMySQLProvider creates a new MySQL provider instance
 func NewMySQLProvider(options *Options) (*MySQLProvider, error) {
 	driverName = MySQLDatabaseProviderName
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",

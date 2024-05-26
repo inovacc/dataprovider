@@ -1,3 +1,5 @@
+//go:build postgres
+
 package provider
 
 import (
@@ -67,6 +69,7 @@ func (p *PGSQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
+// NewPostgreSQLProvider creates a new PostgreSQL provider instance
 func NewPostgreSQLProvider(options *Options) (*PGSQLProvider, error) {
 	driverName = PostgreSQLDatabaseProviderName
 	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s port=%d host=%s sslmode=disable",
