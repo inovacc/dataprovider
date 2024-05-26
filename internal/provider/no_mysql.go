@@ -3,16 +3,12 @@
 package provider
 
 import (
-	"context"
 	"github.com/dyammarcano/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 )
 
 // MySQLProvider defines the auth provider for MySQL/MariaDB database
-type MySQLProvider struct {
-	dbHandle *sqlx.DB
-	context.Context
-}
+type MySQLProvider struct{}
 
 func (m *MySQLProvider) Disconnect() error {
 	//TODO implement me

@@ -3,16 +3,12 @@
 package provider
 
 import (
-	"context"
 	"github.com/dyammarcano/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 )
 
 // ORASQLProvider defines the auth provider for Oracle database
-type ORASQLProvider struct {
-	dbHandle *sqlx.DB
-	context.Context
-}
+type ORASQLProvider struct{}
 
 func (o *ORASQLProvider) Disconnect() error {
 	//TODO implement me

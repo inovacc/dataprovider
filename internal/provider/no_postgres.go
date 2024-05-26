@@ -3,16 +3,12 @@
 package provider
 
 import (
-	"context"
 	"github.com/dyammarcano/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 )
 
 // PGSQLProvider defines the auth provider for PostgreSQL database
-type PGSQLProvider struct {
-	dbHandle *sqlx.DB
-	context.Context
-}
+type PGSQLProvider struct{}
 
 func (p *PGSQLProvider) Disconnect() error {
 	//TODO implement me
