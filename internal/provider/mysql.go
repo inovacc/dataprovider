@@ -5,8 +5,8 @@ package provider
 import (
 	"context"
 	"fmt"
-	"github.com/dyammarcano/dataprovider/internal/migration"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 )
 

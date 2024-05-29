@@ -2,8 +2,8 @@ package dataprovider
 
 import (
 	"fmt"
-	"github.com/dyammarcano/dataprovider/internal/migration"
-	"github.com/dyammarcano/dataprovider/internal/provider"
+	"github.com/inovacc/dataprovider/internal/migration"
+	"github.com/inovacc/dataprovider/internal/provider"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/afero"
 	"path/filepath"

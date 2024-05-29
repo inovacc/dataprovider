@@ -1,7 +1,7 @@
-[![CI and Test](https://github.com/dyammarcano/dataprovider/actions/workflows/ci.yml/badge.svg)](https://github.com/dyammarcano/dataprovider/actions/workflows/ci.yml)
-[![Generate SBOM](https://github.com/dyammarcano/dataprovider/actions/workflows/sbom.yml/badge.svg)](https://github.com/dyammarcano/dataprovider/actions/workflows/sbom.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/dyammarcano/dataprovider)](https://goreportcard.com/report/github.com/dyammarcano/dataprovider)
-[![Go Reference](https://pkg.go.dev/badge/github.com/dyammarcano/dataprovider.svg)](https://pkg.go.dev/github.com/dyammarcano/dataprovider)
+[![CI and Test](https://github.com/inovacc/dataprovider/actions/workflows/ci.yml/badge.svg)](https://github.com/inovacc/dataprovider/actions/workflows/ci.yml)
+[![Generate SBOM](https://github.com/inovacc/dataprovider/actions/workflows/sbom.yml/badge.svg)](https://github.com/inovacc/dataprovider/actions/workflows/sbom.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/inovacc/dataprovider)](https://goreportcard.com/report/github.com/inovacc/dataprovider)
+[![Go Reference](https://pkg.go.dev/badge/github.com/inovacc/dataprovider.svg)](https://pkg.go.dev/github.com/inovacc/dataprovider)
 
 # Dataprovider
 
@@ -43,7 +43,7 @@ The dataprovider in `memory` and `sqlite` uses `modernc.org/sqlite` package that
 ## How to use
 
 ```shell
-go get github.com/dyammarcano/dataprovider
+go get github.com/inovacc/dataprovider
 ```
 
 Need to build with the tag `mysql`, `postgres`, or `oracle` to use the specific database. Default driver is `sqlite` in `memory` mode all data is lost when the program ends.
@@ -64,7 +64,7 @@ go build -tags oracle
 ```go
 package main
 
-import "github.com/dyammarcano/dataprovider"
+import "github.com/inovacc/dataprovider"
 
 func main() {
 	// Create a config with driver name to initialize the data provider
@@ -93,7 +93,7 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/dyammarcano/dataprovider"
+	"github.com/inovacc/dataprovider"
 	"os"
 )
 

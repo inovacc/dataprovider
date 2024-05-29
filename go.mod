@@ -1,4 +1,4 @@
-module github.com/dyammarcano/dataprovider
+module github.com/inovacc/dataprovider
 
 go 1.22
 
@@ -22,7 +22,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect

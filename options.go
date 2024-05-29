@@ -2,7 +2,7 @@ package dataprovider
 
 import (
 	"context"
-	"github.com/dyammarcano/dataprovider/internal/provider"
+	"github.com/inovacc/dataprovider/internal/provider"
 )
 
 type OptionFunc func(*provider.Options)
