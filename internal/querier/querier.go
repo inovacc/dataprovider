@@ -1,8 +1,8 @@
 package querier
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 )
 
 // this package is a query builder for SQL queries like SELECT, UPDATE, INSERT, DELETE, PL/SQL, etc.
@@ -57,7 +57,7 @@ type Querier interface {
 	SubQuery(query Querier, alias string) Querier
 
 	// Build generates the final SQL query
-	Build() (string, []any)
+	Build() string
 }
 
 type querier struct {
@@ -166,15 +166,15 @@ func (q *querier) SubQuery(query Querier, alias string) Querier {
 	return q
 }
 
-func (q *querier) Build() (string, []any) {
-	query := []string{}
+func (q *querier) Build() string {
+	var query []string
 
 	if len(q.selectCols) > 0 {
-		query = append(query, "SELECT " + strings.Join(q.selectCols, ", "))
+		query = append(query, fmt.Sprintf("SELECT %s", strings.Join(q.selectCols, ", ")))
 	}
 
 	if q.fromTable != "" {
-		query = append(query, "FROM " + q.fromTable)
+		query = append(query, fmt.Sprintf("FROM %s", q.fromTable))
 	}
 
 	if len(q.joins) > 0 {
@@ -182,19 +182,19 @@ func (q *querier) Build() (string, []any) {
 	}
 
 	if q.whereClause != "" {
-		query = append(query, "WHERE " + q.whereClause)
+		query = append(query, fmt.Sprintf("WHERE %s", q.whereClause))
 	}
 
 	if len(q.groupByCols) > 0 {
-		query = append(query, "GROUP BY " + strings.Join(q.groupByCols, ", "))
+		query = append(query, fmt.Sprintf("GROUP BY %s", strings.Join(q.groupByCols, ", ")))
 	}
 
 	if q.havingClause != "" {
-		query = append(query, "HAVING " + q.havingClause)
+		query = append(query, fmt.Sprintf("HAVING %s", q.havingClause))
 	}
 
 	if len(q.orderByCols) > 0 {
-		query = append(query, "ORDER BY " + strings.Join(q.orderByCols, ", "))
+		query = append(query, fmt.Sprintf("ORDER BY %s", strings.Join(q.orderByCols, ", ")))
 	}
 
 	if q.limitValue > 0 {
@@ -209,5 +209,5 @@ func (q *querier) Build() (string, []any) {
 		query = append(query, strings.Join(q.unions, " "))
 	}
 
-	return strings.Join(query, " "), nil
+	return strings.Join(query, " ")
 }
