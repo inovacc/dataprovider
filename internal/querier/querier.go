@@ -1,5 +1,10 @@
 package querier
 
+import (
+	"strings"
+	"fmt"
+)
+
 // this package is a query builder for SQL queries like SELECT, UPDATE, INSERT, DELETE, PL/SQL, etc.
 
 type Querier interface {
@@ -56,94 +61,153 @@ type Querier interface {
 }
 
 type querier struct {
+	selectCols   []string
+	fromTable    string
+	whereClause  string
+	orderByCols  []string
+	limitValue   int
+	offsetValue  int
+	groupByCols  []string
+	havingClause string
+	joins        []string
+	unions       []string
+	subQueries   []string
 }
 
-func (q querier) Select(columns ...string) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) From(table string) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) Where(condition string) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) OrderBy(columns ...string) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) Limit(limit int) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) Offset(offset int) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) GroupBy(columns ...string) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) Having(condition string) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) Join(table string, condition string) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) LeftJoin(table string, condition string) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) RightJoin(table string, condition string) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) FullJoin(table string, condition string) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) CrossJoin(table string) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) Union(query Querier) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) UnionAll(query Querier) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) SubQuery(query Querier, alias string) Querier {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (q querier) Build() (string, []any) {
-	//TODO implement me
-	panic("implement me")
-}
-
-// NewQuerier creates a new Querier
 func NewQuerier() Querier {
 	return &querier{}
+}
+
+func (q *querier) Select(columns ...string) Querier {
+	q.selectCols = columns
+	return q
+}
+
+func (q *querier) From(table string) Querier {
+	q.fromTable = table
+	return q
+}
+
+func (q *querier) Where(condition string) Querier {
+	q.whereClause = condition
+	return q
+}
+
+func (q *querier) OrderBy(columns ...string) Querier {
+	q.orderByCols = columns
+	return q
+}
+
+func (q *querier) Limit(limit int) Querier {
+	q.limitValue = limit
+	return q
+}
+
+func (q *querier) Offset(offset int) Querier {
+	q.offsetValue = offset
+	return q
+}
+
+func (q *querier) GroupBy(columns ...string) Querier {
+	q.groupByCols = columns
+	return q
+}
+
+func (q *querier) Having(condition string) Querier {
+	q.havingClause = condition
+	return q
+}
+
+func (q *querier) Join(table string, condition string) Querier {
+	joinClause := fmt.Sprintf("JOIN %s ON %s", table, condition)
+	q.joins = append(q.joins, joinClause)
+	return q
+}
+
+func (q *querier) LeftJoin(table string, condition string) Querier {
+	joinClause := fmt.Sprintf("LEFT JOIN %s ON %s", table, condition)
+	q.joins = append(q.joins, joinClause)
+	return q
+}
+
+func (q *querier) RightJoin(table string, condition string) Querier {
+	joinClause := fmt.Sprintf("RIGHT JOIN %s ON %s", table, condition)
+	q.joins = append(q.joins, joinClause)
+	return q
+}
+
+func (q *querier) FullJoin(table string, condition string) Querier {
+	joinClause := fmt.Sprintf("FULL JOIN %s ON %s", table, condition)
+	q.joins = append(q.joins, joinClause)
+	return q
+}
+
+func (q *querier) CrossJoin(table string) Querier {
+	joinClause := fmt.Sprintf("CROSS JOIN %s", table)
+	q.joins = append(q.joins, joinClause)
+	return q
+}
+
+func (q *querier) Union(query Querier) Querier {
+	unionClause := fmt.Sprintf("UNION (%s)", query.Build())
+	q.unions = append(q.unions, unionClause)
+	return q
+}
+
+func (q *querier) UnionAll(query Querier) Querier {
+	unionClause := fmt.Sprintf("UNION ALL (%s)", query.Build())
+	q.unions = append(q.unions, unionClause)
+	return q
+}
+
+func (q *querier) SubQuery(query Querier, alias string) Querier {
+	subQueryClause := fmt.Sprintf("(%s) AS %s", query.Build(), alias)
+	q.subQueries = append(q.subQueries, subQueryClause)
+	return q
+}
+
+func (q *querier) Build() (string, []any) {
+	query := []string{}
+
+	if len(q.selectCols) > 0 {
+		query = append(query, "SELECT " + strings.Join(q.selectCols, ", "))
+	}
+
+	if q.fromTable != "" {
+		query = append(query, "FROM " + q.fromTable)
+	}
+
+	if len(q.joins) > 0 {
+		query = append(query, strings.Join(q.joins, " "))
+	}
+
+	if q.whereClause != "" {
+		query = append(query, "WHERE " + q.whereClause)
+	}
+
+	if len(q.groupByCols) > 0 {
+		query = append(query, "GROUP BY " + strings.Join(q.groupByCols, ", "))
+	}
+
+	if q.havingClause != "" {
+		query = append(query, "HAVING " + q.havingClause)
+	}
+
+	if len(q.orderByCols) > 0 {
+		query = append(query, "ORDER BY " + strings.Join(q.orderByCols, ", "))
+	}
+
+	if q.limitValue > 0 {
+		query = append(query, fmt.Sprintf("LIMIT %d", q.limitValue))
+	}
+
+	if q.offsetValue > 0 {
+		query = append(query, fmt.Sprintf("OFFSET %d", q.offsetValue))
+	}
+
+	if len(q.unions) > 0 {
+		query = append(query, strings.Join(q.unions, " "))
+	}
+
+	return strings.Join(query, " "), nil
 }
