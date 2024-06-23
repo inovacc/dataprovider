@@ -30,7 +30,7 @@ func (m *MySQLProvider) GetProviderStatus() Status {
 	return status
 }
 
-func (m *MySQLProvider) MigrateDatabase() migration.MigrationProvider {
+func (m *MySQLProvider) MigrateDatabase() migration.Migration {
 	//TODO implement me
 	panic("implement me")
 }

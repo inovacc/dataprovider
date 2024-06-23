@@ -16,7 +16,7 @@ type ORASQLProvider struct {
 	context.Context
 }
 
-func (o *ORASQLProvider) MigrateDatabase() migration.MigrationProvider {
+func (o *ORASQLProvider) MigrateDatabase() migration.Migration {
 	//TODO implement me
 	panic("implement me")
 }

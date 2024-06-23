@@ -1,6 +1,6 @@
 package migration
 
-type MigrationProvider interface {
+type Migration interface {
 	Validate(string) error
 	Migrate() error
 	Revert() error
@@ -23,6 +23,6 @@ func (m *migrationProvider) Revert() error {
 	panic("implement me")
 }
 
-func NewMigrationProvider() MigrationProvider {
+func NewMigration() Migration {
 	return &migrationProvider{}
 }

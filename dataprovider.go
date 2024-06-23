@@ -5,8 +5,6 @@ import (
 	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/inovacc/dataprovider/internal/provider"
 	"github.com/jmoiron/sqlx"
-	"github.com/spf13/afero"
-	"path/filepath"
 )
 
 const (
@@ -19,14 +17,16 @@ const (
 	// MySQLDatabaseProviderName defines the name for MySQL database Provider
 	MySQLDatabaseProviderName = provider.MySQLDatabaseProviderName
 
-	// PostgreSQLDatabaseProviderName defines the name for PostgreSQL database Provider
-	PostgreSQLDatabaseProviderName = provider.PostgreSQLDatabaseProviderName
+	// PostgresSQLDatabaseProviderName defines the name for PostgresSQL database Provider
+	PostgresSQLDatabaseProviderName = provider.PostgresSQLDatabaseProviderName
 
 	// MemoryDataProviderName defines the name for memory provider using SQLite in-memory database Provider
 	MemoryDataProviderName = provider.MemoryDataProviderName
 )
 
 type Status = provider.Status
+type Options = provider.Options
+type NamedProvider = provider.NamedProvider
 
 type Provider interface {
 	// Disconnect disconnects from the data provider
@@ -45,7 +45,7 @@ type Provider interface {
 	InitializeDatabase(schema string) error
 
 	// MigrateDatabase migrates the database to the latest version
-	MigrateDatabase() migration.MigrationProvider
+	MigrateDatabase() migration.Migration
 
 	// RevertDatabase reverts the database to the specified version
 	RevertDatabase(targetVersion int) error
@@ -58,7 +58,7 @@ type Provider interface {
 }
 
 // NewDataProvider creates a new data provider instance
-func NewDataProvider(options *provider.Options) (Provider, error) {
+func NewDataProvider(options *Options) (Provider, error) {
 	switch options.Driver {
 	case OracleDatabaseProviderName:
 		return provider.NewOracleProvider(options)
@@ -66,7 +66,7 @@ func NewDataProvider(options *provider.Options) (Provider, error) {
 		return provider.NewSQLiteProvider(options)
 	case MySQLDatabaseProviderName:
 		return provider.NewMySQLProvider(options)
-	case PostgreSQLDatabaseProviderName:
+	case PostgresSQLDatabaseProviderName:
 		return provider.NewPostgreSQLProvider(options)
 	case MemoryDataProviderName:
 		return provider.NewMemoryProvider(options)
@@ -83,33 +83,4 @@ func Must(provider Provider, err error) Provider {
 		panic(err)
 	}
 	return provider
-}
-
-func GetQueryFromFile(filename string) (string, error) {
-	fs := afero.NewOsFs()
-
-	ok, err := afero.DirExists(fs, filepath.Dir(filename))
-	if err != nil {
-		return "", err
-	}
-
-	if !ok {
-		return "", fmt.Errorf("directory %s does not exist", filepath.Dir(filename))
-	}
-
-	ok, err = afero.Exists(fs, filename)
-	if err != nil {
-		return "", err
-	}
-
-	if !ok {
-		return "", fmt.Errorf("file %s does not exist", filename)
-	}
-
-	content, err := afero.ReadFile(fs, filename)
-	if err != nil {
-		return "", err
-	}
-
-	return string(content), nil
 }

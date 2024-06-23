@@ -30,7 +30,7 @@ func (s *SQLiteProvider) GetProviderStatus() Status {
 }
 
 // MigrateDatabase migrates the database to the latest version
-func (s *SQLiteProvider) MigrateDatabase() migration.MigrationProvider {
+func (s *SQLiteProvider) MigrateDatabase() migration.Migration {
 	//TODO implement me
 	panic("implement me")
 }

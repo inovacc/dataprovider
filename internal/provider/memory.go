@@ -29,7 +29,7 @@ func (m *MemoryProvider) GetProviderStatus() Status {
 }
 
 // MigrateDatabase migrates the database to the latest version
-func (m *MemoryProvider) MigrateDatabase() migration.MigrationProvider {
+func (m *MemoryProvider) MigrateDatabase() migration.Migration {
 	//TODO implement me
 	panic("implement me")
 }

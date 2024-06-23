@@ -35,7 +35,7 @@ func (o *ORASQLProvider) InitializeDatabase(schema string) error {
 	panic("implement me")
 }
 
-func (o *ORASQLProvider) MigrateDatabase() migration.MigrationProvider {
+func (o *ORASQLProvider) MigrateDatabase() migration.Migration {
 	//TODO implement me
 	panic("implement me")
 }

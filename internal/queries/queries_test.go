@@ -1,11 +1,11 @@
-package querier
+package queries
 
 import (
 	"testing"
 )
 
 func TestQuerier(t *testing.T) {
-	q := NewQuerier()
+	q := NewQueries()
 
 	query := q.Select("column1", "column2").From("table1").Build()
 

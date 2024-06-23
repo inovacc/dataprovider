@@ -35,7 +35,7 @@ func (m *MySQLProvider) InitializeDatabase(schema string) error {
 	panic("implement me")
 }
 
-func (m *MySQLProvider) MigrateDatabase() migration.MigrationProvider {
+func (m *MySQLProvider) MigrateDatabase() migration.Migration {
 	//TODO implement me
 	panic("implement me")
 }

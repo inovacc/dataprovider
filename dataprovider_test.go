@@ -1,6 +1,7 @@
 package dataprovider
 
 import (
+	"github.com/inovacc/dataprovider/internal/queries"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -16,7 +17,7 @@ func TestNewMemoryProvider(t *testing.T) {
 
 	conn := provider.GetConnection()
 
-	query, err := GetQueryFromFile("internal/testdata/sqlite/create_user_table.sql")
+	query, err := queries.GetQueryFromFile("internal/testdata/sqlite/create_user_table.sql")
 	if err != nil {
 		t.Errorf("Error %s", err)
 	}
@@ -25,7 +26,7 @@ func TestNewMemoryProvider(t *testing.T) {
 		panic(err)
 	}
 
-	query, err = GetQueryFromFile("internal/testdata/sqlite/insert_user.sql")
+	query, err = queries.GetQueryFromFile("internal/testdata/sqlite/insert_user.sql")
 	if err != nil {
 		t.Errorf("Error %s", err)
 	}

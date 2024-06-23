@@ -7,7 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// PGSQLProvider defines the auth provider for PostgreSQL database
+// PGSQLProvider defines the auth provider for PostgresSQL database
 type PGSQLProvider struct{}
 
 func (p *PGSQLProvider) Disconnect() error {
@@ -35,7 +35,7 @@ func (p *PGSQLProvider) InitializeDatabase(schema string) error {
 	panic("implement me")
 }
 
-func (p *PGSQLProvider) MigrateDatabase() migration.MigrationProvider {
+func (p *PGSQLProvider) MigrateDatabase() migration.Migration {
 	//TODO implement me
 	panic("implement me")
 }

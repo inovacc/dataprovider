@@ -12,8 +12,8 @@ const (
 	// MySQLDatabaseProviderName defines the name for MySQL database Provider
 	MySQLDatabaseProviderName NamedProvider = "mysql"
 
-	// PostgreSQLDatabaseProviderName defines the name for PostgreSQL database Provider
-	PostgreSQLDatabaseProviderName NamedProvider = "postgres"
+	// PostgresSQLDatabaseProviderName defines the name for PostgresSQL database Provider
+	PostgresSQLDatabaseProviderName NamedProvider = "postgres"
 
 	// MemoryDataProviderName defines the name for memory provider using SQLite in-memory database Provider
 	MemoryDataProviderName NamedProvider = "memory"

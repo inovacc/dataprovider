@@ -30,7 +30,7 @@ func (p *PGSQLProvider) GetProviderStatus() Status {
 	return status
 }
 
-func (p *PGSQLProvider) MigrateDatabase() migration.MigrationProvider {
+func (p *PGSQLProvider) MigrateDatabase() migration.Migration {
 	//TODO implement me
 	panic("implement me")
 }
@@ -71,7 +71,7 @@ func (p *PGSQLProvider) ResetDatabase() error {
 
 // NewPostgreSQLProvider creates a new PostgreSQL provider instance
 func NewPostgreSQLProvider(options *Options) (*PGSQLProvider, error) {
-	driverName = PostgreSQLDatabaseProviderName
+	driverName = PostgresSQLDatabaseProviderName
 	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s port=%d host=%s sslmode=disable",
 		options.Username, options.Name, options.Password, options.Port, options.Host)
 
