@@ -10,7 +10,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// PGSQLProvider defines the auth provider for PostgreSQL database
+// PGSQLProvider defines the auth provider for PostgresSQL database
 type PGSQLProvider struct {
 	dbHandle *sqlx.DB
 	context.Context
@@ -69,9 +69,9 @@ func (p *PGSQLProvider) ResetDatabase() error {
 	panic("implement me")
 }
 
-// NewPostgreSQLProvider creates a new PostgreSQL provider instance
-func NewPostgreSQLProvider(options *Options) (*PGSQLProvider, error) {
-	driverName = PostgresSQLDatabaseProviderName
+// NewPostgresSQLProvider creates a new PostgresSQL provider instance
+func NewPostgresSQLProvider(options *Options) (*PGSQLProvider, error) {
+	driverName = options.Driver
 	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s port=%d host=%s sslmode=disable",
 		options.Username, options.Name, options.Password, options.Port, options.Host)
 

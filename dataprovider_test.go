@@ -7,12 +7,11 @@ import (
 )
 
 func TestNewMemoryProvider(t *testing.T) {
-	driverName := MemoryDataProviderName
-	opts := NewOptions(WithDriver(driverName))
-	var provider = Must(NewDataProvider(opts))
+	optsFn := NewOptions(WithMemoryDB())
+	var provider = Must(NewDataProvider(optsFn))
 
-	if providerStatus := provider.GetProviderStatus(); providerStatus.Driver != driverName {
-		t.Errorf("Expected %s, got %s", driverName, providerStatus.Driver)
+	if providerStatus := provider.GetProviderStatus(); providerStatus.Driver != MemoryDataProviderName {
+		t.Errorf("Expected %s, got %s", MemoryDataProviderName, providerStatus.Driver)
 	}
 
 	conn := provider.GetConnection()
