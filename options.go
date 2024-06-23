@@ -7,7 +7,7 @@ import (
 
 type OptionFunc func(*provider.Options)
 
-func WithDriver(driver provider.NamedProvider) OptionFunc {
+func WithDriver(driver string) OptionFunc {
 	return func(o *provider.Options) {
 		o.Driver = driver
 	}

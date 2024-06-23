@@ -3,7 +3,7 @@ package provider
 import "context"
 
 type Options struct {
-	Driver           NamedProvider
+	Driver           string
 	Name             string
 	Host             string
 	Port             int

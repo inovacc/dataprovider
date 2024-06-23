@@ -1,28 +1,26 @@
 package provider
 
-type NamedProvider string
-
 const (
 	// OracleDatabaseProviderName defines the name for Oracle database Provider
-	OracleDatabaseProviderName NamedProvider = "oracle"
+	OracleDatabaseProviderName string = "oracle"
 
 	// SQLiteDataProviderName defines the name for SQLite database Provider
-	SQLiteDataProviderName NamedProvider = "sqlite"
+	SQLiteDataProviderName string = "sqlite"
 
 	// MySQLDatabaseProviderName defines the name for MySQL database Provider
-	MySQLDatabaseProviderName NamedProvider = "mysql"
+	MySQLDatabaseProviderName string = "mysql"
 
 	// PostgresSQLDatabaseProviderName defines the name for PostgresSQL database Provider
-	PostgresSQLDatabaseProviderName NamedProvider = "postgres"
+	PostgresSQLDatabaseProviderName string = "postgres"
 
 	// MemoryDataProviderName defines the name for memory provider using SQLite in-memory database Provider
-	MemoryDataProviderName NamedProvider = "memory"
+	MemoryDataProviderName string = "memory"
 )
 
-var driverName NamedProvider
+var driverName string
 
 type Status struct {
-	Driver   NamedProvider `json:"driver"`
-	Error    error         `json:"error"`
-	IsActive bool          `json:"is_active"`
+	Driver   string `json:"driver"`
+	Error    error  `json:"error"`
+	IsActive bool   `json:"is_active"`
 }

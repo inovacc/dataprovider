@@ -26,7 +26,6 @@ const (
 
 type Status = provider.Status
 type Options = provider.Options
-type NamedProvider = provider.NamedProvider
 
 type Provider interface {
 	// Disconnect disconnects from the data provider
