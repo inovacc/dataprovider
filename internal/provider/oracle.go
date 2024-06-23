@@ -72,7 +72,7 @@ func (o *ORASQLProvider) GetProviderStatus() Status {
 
 // NewOracleProvider creates a new Oracle provider instance
 func NewOracleProvider(options *Options) (*ORASQLProvider, error) {
-	driverName = OracleDatabaseProviderName
+	driverName = options.Driver
 	dataSourceName := fmt.Sprintf("%s/%s@%s:%d/%s",
 		options.Username, options.Password, options.Host, options.Port, options.Name)
 

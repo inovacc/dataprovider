@@ -77,8 +77,8 @@ func (m *MemoryProvider) ResetDatabase() error {
 
 // NewMemoryProvider creates a new memory provider instance
 func NewMemoryProvider(options *Options) (*MemoryProvider, error) {
-	driverName = MemoryDataProviderName
-	dbHandle, err := sqlx.Open("sqlite", ":memory:")
+	driverName = options.Driver
+	dbHandle, err := sqlx.Open("sqlite", options.ConnectionString)
 	if err != nil {
 		return nil, err
 	}

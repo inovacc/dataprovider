@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"fmt"
 	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 	_ "modernc.org/sqlite"
@@ -78,12 +77,7 @@ func (s *SQLiteProvider) ResetDatabase() error {
 
 // NewSQLiteProvider creates a new SQLite provider instance
 func NewSQLiteProvider(options *Options) (*SQLiteProvider, error) {
-	driverName = SQLiteDataProviderName
-
-	if options.ConnectionString == "" {
-		return nil, fmt.Errorf("missing connection string")
-	}
-
+	driverName = options.Driver
 	dbHandle, err := sqlx.Connect("sqlite", options.ConnectionString)
 	if err != nil {
 		return nil, err

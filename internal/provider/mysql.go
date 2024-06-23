@@ -71,7 +71,7 @@ func (m *MySQLProvider) ResetDatabase() error {
 
 // NewMySQLProvider creates a new MySQL provider instance
 func NewMySQLProvider(options *Options) (*MySQLProvider, error) {
-	driverName = MySQLDatabaseProviderName
+	driverName = options.Driver
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
 		options.Username, options.Password, options.Host, options.Port, options.Name)
 
