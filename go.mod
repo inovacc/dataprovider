@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/go-sql-driver/mysql v1.8.1
-	github.com/godror/godror v0.44.0
+	github.com/godror/godror v0.44.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/spf13/afero v1.11.0
