@@ -16,6 +16,10 @@ type PGSQLProvider struct {
 	context.Context
 }
 
+func (p *PGSQLProvider) NewSQLBuilder() *SQLBuilder {
+	return NewSQLBuilder(p.GetProviderStatus().Driver)
+}
+
 func (p *PGSQLProvider) GetProviderStatus() Status {
 	status := Status{
 		Driver:   driverName,

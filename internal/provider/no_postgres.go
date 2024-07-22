@@ -10,6 +10,11 @@ import (
 // PGSQLProvider defines the auth provider for PostgresSQL database
 type PGSQLProvider struct{}
 
+func (p *PGSQLProvider) SqlBuilder() *SQLBuilder {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (p *PGSQLProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")

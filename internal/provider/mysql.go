@@ -16,6 +16,10 @@ type MySQLProvider struct {
 	context.Context
 }
 
+func (m *MySQLProvider) NewSQLBuilder() *SQLBuilder {
+	return NewSQLBuilder(m.GetProviderStatus().Driver)
+}
+
 func (m *MySQLProvider) GetProviderStatus() Status {
 	status := Status{
 		Driver:   driverName,
