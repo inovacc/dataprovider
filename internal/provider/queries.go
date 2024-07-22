@@ -169,24 +169,24 @@ func (b *SQLBuilder) Build() string {
 	return sb.String()
 }
 
-// Function define una función
-func (b *SQLBuilder) Function(name string, params ...string) string {
+func (b *SQLBuilder) Truncate() string {
 	var sb strings.Builder
-	sb.WriteString("CREATE FUNCTION ")
-	sb.WriteString(name)
-	sb.WriteString("(")
-	sb.WriteString(strings.Join(params, ", "))
-	sb.WriteString(") RETURNS void AS $$ BEGIN RETURN; END; $$ LANGUAGE plpgsql;")
+	sb.WriteString("TRUNCATE TABLE ")
+	if b.schema != "" {
+		sb.WriteString(b.schema)
+		sb.WriteString(".")
+	}
+	sb.WriteString(b.table)
 	return sb.String()
 }
 
-// Procedure define un procedimiento almacenado
-func (b *SQLBuilder) Procedure(name string, params ...string) string {
+func (b *SQLBuilder) Drop() string {
 	var sb strings.Builder
-	sb.WriteString("CREATE PROCEDURE ")
-	sb.WriteString(name)
-	sb.WriteString("(")
-	sb.WriteString(strings.Join(params, ", "))
-	sb.WriteString(") AS $$ BEGIN RETURN; END; $$ LANGUAGE plpgsql;")
+	sb.WriteString("DROP TABLE ")
+	if b.schema != "" {
+		sb.WriteString(b.schema)
+		sb.WriteString(".")
+	}
+	sb.WriteString(b.table)
 	return sb.String()
 }
