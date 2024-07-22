@@ -10,6 +10,11 @@ import (
 // MySQLProvider defines the auth provider for MySQL/MariaDB database
 type MySQLProvider struct{}
 
+func (m *MySQLProvider) SqlBuilder() *SQLBuilder {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (m *MySQLProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")

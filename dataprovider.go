@@ -5,6 +5,8 @@ import (
 	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/inovacc/dataprovider/internal/provider"
 	"github.com/jmoiron/sqlx"
+	"github.com/spf13/afero"
+	"path/filepath"
 )
 
 const (
@@ -54,6 +56,8 @@ type Provider interface {
 
 	// GetProviderStatus returns the status of the provider
 	GetProviderStatus() Status
+
+	SqlBuilder() *provider.SQLBuilder
 }
 
 // NewDataProvider creates a new data provider instance
@@ -82,4 +86,33 @@ func Must(provider Provider, err error) Provider {
 		panic(err)
 	}
 	return provider
+}
+
+func GetQueryFromFile(filename string) (string, error) {
+	fs := afero.NewOsFs()
+
+	ok, err := afero.DirExists(fs, filepath.Dir(filename))
+	if err != nil {
+		return "", err
+	}
+
+	if !ok {
+		return "", fmt.Errorf("directory %s does not exist", filepath.Dir(filename))
+	}
+
+	ok, err = afero.Exists(fs, filename)
+	if err != nil {
+		return "", err
+	}
+
+	if !ok {
+		return "", fmt.Errorf("file %s does not exist", filename)
+	}
+
+	content, err := afero.ReadFile(fs, filename)
+	if err != nil {
+		return "", err
+	}
+
+	return string(content), nil
 }

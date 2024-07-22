@@ -13,6 +13,10 @@ type MemoryProvider struct {
 	context.Context
 }
 
+func (m *MemoryProvider) SqlBuilder() *SQLBuilder {
+	return NewSQLBuilder(m.GetProviderStatus().Driver)
+}
+
 // GetProviderStatus returns the status of the provider
 func (m *MemoryProvider) GetProviderStatus() Status {
 	status := Status{

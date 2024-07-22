@@ -3,6 +3,7 @@ package dataprovider
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -21,6 +22,11 @@ type OptionFunc func(*Options)
 // WithSqliteDB sets sqlite db path name
 func WithSqliteDB(name, path string) OptionFunc {
 	sb := strings.Builder{}
+
+	if path == "." {
+		dir, _ := os.Getwd()
+		path = dir
+	}
 
 	sb.WriteString("file:")
 	if !strings.HasSuffix(name, ".sqlite3") {

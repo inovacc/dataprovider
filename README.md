@@ -68,12 +68,9 @@ import "github.com/inovacc/dataprovider"
 
 func main() {
 	// Create a config with driver name to initialize the data provider
-	opts := dataprovider.NewOptions(
-		    dataprovider.WithDriver(dataprovider.SQLiteDataProviderName), 
-		    dataprovider.WithConnectionString("file:test.sqlite3?cache=shared"), 
-		)
-	
-	var provider = dataprovider.Must(dataprovider.NewDataProvider(opts))
+	var provider = dataprovider.Must(dataprovider.NewDataProvider(
+		dataprovider.NewOptions(dataprovider.WithSqliteDB("test", ".")),
+	))
 
 	// Initialize the database
 	query := "CREATE TABLE IF NOT EXISTS ...;"
@@ -83,7 +80,17 @@ func main() {
 
 	// Get the connection and use it as sqlx.DB or sql.DB
 	conn := provider.GetConnection()
+
+	query := provider.NewSQLBuilder(provider).
+		Table("users").
+		Select("id", "name", "email").
+		Where("age > 18").
+		OrderBy("name ASC").
+		Limit(10).
+		Offset(5).
+		Build()
 }
+
 ```
 
 ## Example of usage

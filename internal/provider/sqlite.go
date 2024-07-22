@@ -13,6 +13,10 @@ type SQLiteProvider struct {
 	context.Context
 }
 
+func (s *SQLiteProvider) SqlBuilder() *SQLBuilder {
+	return NewSQLBuilder(s.GetProviderStatus().Driver)
+}
+
 // GetProviderStatus returns the status of the provider
 func (s *SQLiteProvider) GetProviderStatus() Status {
 	status := Status{
