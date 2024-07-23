@@ -10,6 +10,11 @@ import (
 // ORASQLProvider defines the auth provider for Oracle database
 type ORASQLProvider struct{}
 
+func (o *ORASQLProvider) SqlBuilder() *SQLBuilder {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (o *ORASQLProvider) Disconnect() error {
 	//TODO implement me
 	panic("implement me")

@@ -16,6 +16,10 @@ type ORASQLProvider struct {
 	context.Context
 }
 
+func (o *ORASQLProvider) NewSQLBuilder() *SQLBuilder {
+	return NewSQLBuilder(o.GetProviderStatus().Driver)
+}
+
 func (o *ORASQLProvider) MigrateDatabase() migration.Migration {
 	//TODO implement me
 	panic("implement me")
