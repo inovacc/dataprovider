@@ -8,6 +8,8 @@ import (
 	"github.com/inovacc/dataprovider/internal/provider"
 	"github.com/jmoiron/sqlx"
 	"github.com/jmoiron/sqlx/reflectx"
+	"github.com/spf13/afero"
+	"path/filepath"
 	"reflect"
 )
 
@@ -159,4 +161,33 @@ func fieldsByTraversal(v reflect.Value, traversals [][]int, values []any, ptrs b
 		}
 	}
 	return nil
+}
+
+func GetQueryFromFile(filename string) (string, error) {
+	fs := afero.NewOsFs()
+
+	ok, err := afero.DirExists(fs, filepath.Dir(filename))
+	if err != nil {
+		return "", err
+	}
+
+	if !ok {
+		return "", fmt.Errorf("directory %s does not exist", filepath.Dir(filename))
+	}
+
+	ok, err = afero.Exists(fs, filename)
+	if err != nil {
+		return "", err
+	}
+
+	if !ok {
+		return "", fmt.Errorf("file %s does not exist", filename)
+	}
+
+	content, err := afero.ReadFile(fs, filename)
+	if err != nil {
+		return "", err
+	}
+
+	return string(content), nil
 }
