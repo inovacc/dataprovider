@@ -1,10 +1,14 @@
 package dataprovider
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/inovacc/dataprovider/internal/provider"
 	"github.com/jmoiron/sqlx"
+	"github.com/jmoiron/sqlx/reflectx"
+	"reflect"
 )
 
 const (
@@ -82,4 +86,77 @@ func Must(provider Provider, err error) Provider {
 		panic(err)
 	}
 	return provider
+}
+
+// StructScan scans a row from the database into a struct. The struct should be passed by reference. (riped out from sqlx)
+func StructScan(rows *sql.Rows, dest any) error {
+	v := reflect.ValueOf(dest)
+
+	if v.Kind() != reflect.Ptr {
+		return errors.New("must pass a pointer, not a value, to StructScan destination")
+	}
+
+	v = v.Elem()
+
+	var (
+		started bool
+		fields  [][]int
+		values  []any
+		unsafe  bool
+	)
+
+	if !started {
+		columns, err := rows.Columns()
+		if err != nil {
+			return err
+		}
+		m := &reflectx.Mapper{}
+
+		fields = m.TraversalsByName(v.Type(), columns)
+		// if we are not unsafe and are missing fields, return an error
+		if f, err := missingFields(fields); err != nil && !unsafe {
+			return fmt.Errorf("missing destination name %s in %T", columns[f], dest)
+		}
+		values = make([]any, len(columns))
+		started = true
+	}
+
+	if err := fieldsByTraversal(v, fields, values, true); err != nil {
+		return err
+	}
+	// scan into the struct field pointers and append to our results
+	if err := rows.Scan(values...); err != nil {
+		return err
+	}
+	return rows.Err()
+}
+
+func missingFields(transverse [][]int) (field int, err error) {
+	for i, t := range transverse {
+		if len(t) == 0 {
+			return i, errors.New("missing field")
+		}
+	}
+	return 0, nil
+}
+
+func fieldsByTraversal(v reflect.Value, traversals [][]int, values []any, ptrs bool) error {
+	v = reflect.Indirect(v)
+	if v.Kind() != reflect.Struct {
+		return errors.New("argument not a struct")
+	}
+
+	for i, traversal := range traversals {
+		if len(traversal) == 0 {
+			values[i] = new(any)
+			continue
+		}
+		f := reflectx.FieldByIndexes(v, traversal)
+		if ptrs {
+			values[i] = f.Addr().Interface()
+		} else {
+			values[i] = f.Interface()
+		}
+	}
+	return nil
 }
