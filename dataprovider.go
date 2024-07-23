@@ -60,6 +60,9 @@ type Provider interface {
 
 	// GetProviderStatus returns the status of the provider
 	GetProviderStatus() Status
+
+	// SqlBuilder returns the SQLBuilder instance
+	SqlBuilder() *provider.SQLBuilder
 }
 
 // NewDataProvider creates a new data provider instance
