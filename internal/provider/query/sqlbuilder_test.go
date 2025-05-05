@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/inovacc/dataprovider/internal/provider"
@@ -100,7 +101,7 @@ func TestCreateDropDeleteSQL(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.operation+"_"+tt.driver, func(t *testing.T) {
+		t.Run(fmt.Sprintf("%s_%s", tt.operation, tt.driver), func(t *testing.T) {
 			opts := provider.Options{Driver: tt.driver}
 			builder := NewQueryBuilder(opts)
 			sql, _ := tt.builderFunc(builder)
@@ -165,7 +166,7 @@ func TestInsertAndUpdateSQL(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.opType+"_"+tt.driver, func(t *testing.T) {
+		t.Run(fmt.Sprintf("%s_%s", tt.opType, tt.driver), func(t *testing.T) {
 			opts := provider.Options{Driver: tt.driver}
 			builder := NewQueryBuilder(opts)
 			sql, _ := tt.builderFunc(builder)
@@ -175,5 +176,198 @@ func TestInsertAndUpdateSQL(t *testing.T) {
 				t.Errorf("expected SQL %q, got %q", expected, sql)
 			}
 		})
+	}
+}
+
+func TestMergeBuilder(t *testing.T) {
+	tests := []struct {
+		driver   string
+		expected string
+	}{
+		{
+			driver:   provider.PostgresSQLDatabaseProviderName,
+			expected: "MERGE INTO users ON id = $1 WHEN MATCHED THEN UPDATE SET email = $2 WHEN NOT MATCHED THEN INSERT (id, email) VALUES ($3, $4)",
+		},
+		{
+			driver:   provider.OracleDatabaseProviderName,
+			expected: "MERGE INTO users ON id = :p1 WHEN MATCHED THEN UPDATE SET email = :p2 WHEN NOT MATCHED THEN INSERT (id, email) VALUES (:p3, :p4)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.driver, func(t *testing.T) {
+			opts := provider.Options{Driver: tt.driver}
+			q := NewQueryBuilder(opts).
+				MergeInto("users").
+				On("id = ?").
+				WhenMatched(map[string]any{"email": "updated@example.com"}).
+				WhenNotMatchedInsert([]string{"id", "email"}, []any{123, "new@example.com"})
+
+			sql, _ := q.Build()
+			if sql != tt.expected {
+				t.Errorf("Expected: %q\nGot:      %q", tt.expected, sql)
+			}
+		})
+	}
+}
+
+func TestRawSQLInjection(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opts).
+		Raw("SELECT * FROM users WHERE email = ?", "john@example.com")
+
+	sql, args := q.Build()
+	expectedSQL := "SELECT * FROM users WHERE email = $1"
+
+	if sql != expectedSQL {
+		t.Errorf("Expected SQL: %q\nGot: %q", expectedSQL, sql)
+	}
+	if len(args) != 1 || args[0] != "john@example.com" {
+		t.Errorf("Expected args to be [\"john@example.com\"], got %v", args)
+	}
+}
+
+func TestAliasSupport(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opts).
+		Select("users", "id", "email").
+		As("u")
+
+	sql, _ := q.Build()
+	expectedSQL := "SELECT id, email FROM users AS u"
+
+	if sql != expectedSQL {
+		t.Errorf("Expected SQL: %q\nGot: %q", expectedSQL, sql)
+	}
+}
+
+func TestGroupByHaving(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opts).
+		Select("orders", "customer_id", "COUNT(*)").
+		GroupBy("customer_id").
+		Having("COUNT(*) > ?", 5).
+		OrderBy("customer_id")
+
+	sql, args := q.Build()
+	expectedSQL := "SELECT customer_id, COUNT(*) FROM orders GROUP BY customer_id HAVING COUNT(*) > $1 ORDER BY customer_id"
+
+	if sql != expectedSQL {
+		t.Errorf("Expected SQL: %q\nGot: %q", expectedSQL, sql)
+	}
+	if len(args) != 1 || args[0] != 5 {
+		t.Errorf("Expected args to be [5], got %v", args)
+	}
+}
+
+func TestJoinClauses(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opts).
+		Select("orders", "orders.id", "users.email").
+		Join("users", "orders.user_id = users.id").
+		LeftJoin("payments", "orders.id = payments.order_id").
+		RightJoin("shipments", "orders.id = shipments.order_id")
+
+	sql, _ := q.Build()
+	expectedSQL := "SELECT orders.id, users.email FROM orders JOIN users ON orders.user_id = users.id LEFT JOIN payments ON orders.id = payments.order_id RIGHT JOIN shipments ON orders.id = shipments.order_id"
+
+	if sql != expectedSQL {
+		t.Errorf("Expected SQL: %q\nGot: %q", expectedSQL, sql)
+	}
+}
+
+func TestJoinGroupByHaving(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opts).
+		Select("orders", "users.name", "COUNT(orders.id)").
+		Join("users", "orders.user_id = users.id").
+		GroupBy("users.name").
+		Having("COUNT(orders.id) > ?", 10).
+		OrderBy("users.name")
+
+	sql, args := q.Build()
+	expectedSQL := "SELECT users.name, COUNT(orders.id) FROM orders JOIN users ON orders.user_id = users.id GROUP BY users.name HAVING COUNT(orders.id) > $1 ORDER BY users.name"
+
+	if sql != expectedSQL {
+		t.Errorf("Expected SQL: %q\nGot: %q", expectedSQL, sql)
+	}
+	if len(args) != 1 || args[0] != 10 {
+		t.Errorf("Expected args to be [10], got %v", args)
+	}
+}
+
+func TestNestedSelect(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	inner := NewQueryBuilder(opts).
+		Select("payments", "user_id").
+		Where("status = ?", "completed")
+
+	subSQL, subArgs := inner.Build()
+
+	q := NewQueryBuilder(opts).
+		Select("users", "id", "email").
+		Where(fmt.Sprintf("id IN (%s)", subSQL), subArgs...)
+
+	sql, args := q.Build()
+	expectedSQL := "SELECT id, email FROM users WHERE id IN (SELECT user_id FROM payments WHERE status = $1)"
+
+	if sql != expectedSQL {
+		t.Errorf("Expected SQL: %q\nGot: %q", expectedSQL, sql)
+	}
+	if len(args) != 1 || args[0] != "completed" {
+		t.Errorf("Expected args to be [\"completed\"], got %v", args)
+	}
+}
+
+func TestUnionQueries(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	q1 := NewQueryBuilder(opts).
+		Select("users", "id", "email").
+		Where("role = ?", "admin")
+
+	s1, a1 := q1.Build()
+
+	q2 := NewQueryBuilder(opts).
+		Select("users", "id", "email").
+		Where("role = ?", "manager")
+
+	s2, a2 := q2.Build()
+
+	sql := fmt.Sprintf("%s UNION %s", s1, s2)
+	args := append(a1, a2...)
+
+	expectedSQL := "SELECT id, email FROM users WHERE role = $1 UNION SELECT id, email FROM users WHERE role = $2"
+
+	if sql != expectedSQL {
+		t.Errorf("Expected SQL: %q\nGot: %q", expectedSQL, sql)
+	}
+	if len(args) != 2 || args[0] != "admin" || args[1] != "manager" {
+		t.Errorf("Expected args to be [\"admin\", \"manager\"], got %v", args)
+	}
+}
+
+func TestCaseWhenClause(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opts).
+		Select("orders", "id", "amount", "CASE WHEN amount > 100 THEN 'high' ELSE 'low' END AS category")
+
+	sql, _ := q.Build()
+	expectedSQL := "SELECT id, amount, CASE WHEN amount > 100 THEN 'high' ELSE 'low' END AS category FROM orders"
+
+	if sql != expectedSQL {
+		t.Errorf("Expected SQL: %q\nGot: %q", expectedSQL, sql)
+	}
+}
+
+func TestWindowFunction(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opts).
+		Select("orders", "id", "amount", "RANK() OVER (PARTITION BY customer_id ORDER BY amount DESC) AS rank")
+
+	sql, _ := q.Build()
+	expectedSQL := "SELECT id, amount, RANK() OVER (PARTITION BY customer_id ORDER BY amount DESC) AS rank FROM orders"
+
+	if sql != expectedSQL {
+		t.Errorf("Expected SQL: %q\nGot: %q", expectedSQL, sql)
 	}
 }

@@ -1,3 +1,4 @@
+// Package query SQLBuilder with adaptations based on SQL and DML/DDL best practices from educational sources and database dialect specifics
 package query
 
 import (
@@ -8,23 +9,24 @@ import (
 )
 
 const (
-	joinTemplate        = "JOIN %s ON %s"
-	leftJoinTemplate    = "LEFT JOIN %s ON %s"
-	rightJoinTemplate   = "RIGHT JOIN %s ON %s"
-	whereTemplate       = " WHERE %s"
-	groupByTemplate     = "GROUP BY %s"
-	orderByTemplate     = "ORDER BY %s"
-	limitTemplate       = "LIMIT %d"
-	offsetTemplate      = "OFFSET %d"
-	havingTemplate      = "HAVING %s"
-	selectTemplate      = "SELECT %s FROM %s"
-	createTableTemplate = "CREATE TABLE %s (%s)"
-	dropTableTemplate   = "DROP TABLE %s"
-	deleteTemplate      = "DELETE FROM %s"
-	insertTemplate      = "INSERT INTO %s (%s) VALUES (%s)"
-	updateTemplate      = "UPDATE %s SET %s"
+	joinTemplate        = `"JOIN %s ON %s`
+	leftJoinTemplate    = `"LEFT JOIN %s ON %s`
+	rightJoinTemplate   = `"RIGHT JOIN %s ON %s`
+	whereTemplate       = `" WHERE %s`
+	groupByTemplate     = `"GROUP BY %s`
+	orderByTemplate     = `"ORDER BY %s`
+	limitTemplate       = `"LIMIT %d`
+	offsetTemplate      = `"OFFSET %d`
+	havingTemplate      = `"HAVING %s`
+	selectTemplate      = `"SELECT %s FROM %s`
+	createTableTemplate = `"CREATE TABLE %s (%s)`
+	dropTableTemplate   = `"DROP TABLE %s`
+	deleteTemplate      = `"DELETE FROM %s`
+	insertTemplate      = `"INSERT INTO %s (%s) VALUES (%s)`
+	updateTemplate      = `"UPDATE %s SET %s`
 )
 
+// PlaceholderFormatter is dialect-aware: PostgresSQL uses $1, Oracle uses: p1, default uses?
 type PlaceholderFormatter interface {
 	ReplacePlaceholders(query string) string
 }
@@ -64,6 +66,7 @@ func NewFormatter(driver string) PlaceholderFormatter {
 	}
 }
 
+// SQLBuilder interface models typical SQL DDL and DML operations for various dialects
 type SQLBuilder interface {
 	Select(table string, columns ...string) SQLBuilder
 	Where(condition string, args ...any) SQLBuilder
@@ -78,12 +81,18 @@ type SQLBuilder interface {
 	CreateTable(table string, definition string) SQLBuilder
 	DropTable(table string) SQLBuilder
 	DeleteFrom(table string) SQLBuilder
-	Build() (string, []any)
-	Clear() SQLBuilder
 	InsertInto(table string, columns ...string) SQLBuilder
 	Values(args ...any) SQLBuilder
 	Update(table string) SQLBuilder
 	Set(column string, value any) SQLBuilder
+	Build() (string, []any)
+	Clear() SQLBuilder
+	As(alias string) SQLBuilder
+	Raw(clause string, args ...any) SQLBuilder
+	MergeInto(table string) SQLBuilder
+	On(condition string) SQLBuilder
+	WhenMatched(updateSet map[string]any) SQLBuilder
+	WhenNotMatchedInsert(columns []string, values []any) SQLBuilder
 }
 
 type queryBuilder struct {
@@ -110,6 +119,45 @@ func NewQueryBuilder(opts provider.Options) SQLBuilder {
 		opts:      opts,
 		formatter: NewFormatter(opts.Driver),
 	}
+}
+
+func (b *queryBuilder) As(alias string) SQLBuilder {
+	b.alias = alias
+	return b
+}
+
+func (b *queryBuilder) Raw(clause string, args ...any) SQLBuilder {
+	b.rawClauses = append(b.rawClauses, clause)
+	b.args = append(b.args, args...)
+	return b
+}
+
+func (b *queryBuilder) MergeInto(table string) SQLBuilder {
+	b.mergeTable = table
+	return b
+}
+
+func (b *queryBuilder) On(condition string) SQLBuilder {
+	b.mergeOn = condition
+	return b
+}
+
+func (b *queryBuilder) WhenMatched(updateSet map[string]any) SQLBuilder {
+	for col, val := range updateSet {
+		b.mergeMatchedSet = append(b.mergeMatchedSet, fmt.Sprintf("%s = ?", col))
+		b.args = append(b.args, val)
+	}
+	return b
+}
+
+func (b *queryBuilder) WhenNotMatchedInsert(columns []string, values []any) SQLBuilder {
+	b.mergeInsertCols = columns
+	b.mergeInsertVals = make([]string, len(values))
+	for i := range values {
+		b.mergeInsertVals[i] = "?"
+	}
+	b.args = append(b.args, values...)
+	return b
 }
 
 func (b *queryBuilder) InsertInto(table string, columns ...string) SQLBuilder {
@@ -226,6 +274,38 @@ func (b *queryBuilder) Clear() SQLBuilder {
 }
 
 func (b *queryBuilder) Build() (string, []any) {
+	if b.mergeTable != "" {
+		var sb strings.Builder
+		sb.WriteString(fmt.Sprintf("MERGE INTO %s", b.mergeTable))
+		if b.mergeOn != "" {
+			sb.WriteString(fmt.Sprintf(" ON %s", b.mergeOn))
+		}
+		if len(b.mergeMatchedSet) > 0 {
+			sb.WriteString(" WHEN MATCHED THEN UPDATE SET ")
+			sb.WriteString(strings.Join(b.mergeMatchedSet, ", "))
+		}
+		if len(b.mergeInsertCols) > 0 && len(b.mergeInsertVals) > 0 {
+			sb.WriteString(" WHEN NOT MATCHED THEN INSERT (")
+			sb.WriteString(strings.Join(b.mergeInsertCols, ", "))
+			sb.WriteString(") VALUES (")
+			sb.WriteString(strings.Join(b.mergeInsertVals, ", "))
+			sb.WriteString(")")
+		}
+		return b.formatter.ReplacePlaceholders(sb.String()), b.args
+	}
+
+	if len(b.rawClauses) > 0 {
+		return b.formatter.ReplacePlaceholders(strings.Join(b.rawClauses, " ")), b.args
+	}
+
+	if b.special != "" && strings.HasPrefix(b.special, "DELETE FROM") {
+		query := b.special
+		if len(b.where) > 0 {
+			query += fmt.Sprintf(whereTemplate, strings.Join(b.where, " AND "))
+		}
+		return b.formatter.ReplacePlaceholders(query), b.args
+	}
+
 	if b.special != "" {
 		return b.special, b.args
 	}
