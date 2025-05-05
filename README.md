@@ -5,8 +5,10 @@
 
 # Dataprovider
 
-dataprovider is a module that provides a uniform interface to interact behind the scene with many databases and configurations. 
-On this design is used the [jmoiron/sqlx](https://github.com/jmoiron/sqlx) package that provides a set of extensions on top of
+dataprovider is a module that provides a uniform interface to interact behind the scene with many databases and
+configurations.
+On this design is used the [jmoiron/sqlx](https://github.com/jmoiron/sqlx) package that provides a set of extensions on
+top of
 the excellent built-in [database/sql](https://pkg.go.dev/database/sql) package.
 
 The dataprovider in `memory` and `sqlite` uses `modernc.org/sqlite` package that is a `CGO` free SQLite3 driver for Go.
@@ -46,7 +48,8 @@ The dataprovider in `memory` and `sqlite` uses `modernc.org/sqlite` package that
 go get github.com/inovacc/dataprovider
 ```
 
-Need to build with the tag `mysql`, `postgres`, or `oracle` to use the specific database. Default driver is `sqlite` in `memory` mode all data is lost when the program ends.
+Need to build with the tag `mysql`, `postgres`, or `oracle` to use the specific database. Default driver is `sqlite` in
+`memory` mode all data is lost when the program ends.
 
 ```shell
 go build -tags mysql
@@ -61,6 +64,7 @@ go build -tags oracle
 ```
 
 ## Example of initialization
+
 ```go
 package main
 
@@ -117,9 +121,9 @@ type User struct {
 func main() {
 	// Create a config with driver name to initialize the data provider
 	opts := dataprovider.NewOptions(
-		    dataprovider.WithDriver(dataprovider.MemoryDataProviderName),
-		    dataprovider.WithConnectionString("file:test.sqlite3?cache=shared"),
-		)
+		dataprovider.WithDriver(dataprovider.MemoryDataProviderName),
+		dataprovider.WithConnectionString("file:test.sqlite3?cache=shared"),
+	)
 
 	var provider = dataprovider.Must(dataprovider.NewDataProvider(opts))
 

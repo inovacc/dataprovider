@@ -2,11 +2,12 @@ package dataprovider
 
 import (
 	"fmt"
+	"path/filepath"
+
 	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/inovacc/dataprovider/internal/provider"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/afero"
-	"path/filepath"
 )
 
 const (
@@ -22,7 +23,7 @@ const (
 	// PostgresSQLDatabaseProviderName defines the name for PostgresSQL database Provider
 	PostgresSQLDatabaseProviderName = provider.PostgresSQLDatabaseProviderName
 
-	// MemoryDataProviderName defines the name for memory provider using SQLite in-memory database Provider
+	// MemoryDataProviderName defines the name for a memory provider using SQLite in-memory database Provider
 	MemoryDataProviderName = provider.MemoryDataProviderName
 )
 

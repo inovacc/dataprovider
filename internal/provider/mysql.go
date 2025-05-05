@@ -5,6 +5,7 @@ package provider
 import (
 	"context"
 	"fmt"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
@@ -35,7 +36,7 @@ func (m *MySQLProvider) GetProviderStatus() Status {
 }
 
 func (m *MySQLProvider) MigrateDatabase() migration.Migration {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
@@ -64,12 +65,12 @@ func (m *MySQLProvider) InitializeDatabase(schema string) error {
 }
 
 func (m *MySQLProvider) RevertDatabase(targetVersion int) error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m *MySQLProvider) ResetDatabase() error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 

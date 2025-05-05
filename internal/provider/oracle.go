@@ -5,6 +5,7 @@ package provider
 import (
 	"context"
 	"fmt"
+
 	_ "github.com/godror/godror"
 	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
@@ -21,12 +22,12 @@ func (o *ORASQLProvider) NewSQLBuilder() *SQLBuilder {
 }
 
 func (o *ORASQLProvider) MigrateDatabase() migration.Migration {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (o *ORASQLProvider) Disconnect() error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
@@ -46,17 +47,17 @@ func (o *ORASQLProvider) ReconnectDatabase() error {
 }
 
 func (o *ORASQLProvider) InitializeDatabase(schema string) error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (o *ORASQLProvider) RevertDatabase(targetVersion int) error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (o *ORASQLProvider) ResetDatabase() error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 

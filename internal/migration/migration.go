@@ -9,17 +9,17 @@ type Migration interface {
 type migrationProvider struct{}
 
 func (m *migrationProvider) Validate(path string) error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m *migrationProvider) Migrate() error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m *migrationProvider) Revert() error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
