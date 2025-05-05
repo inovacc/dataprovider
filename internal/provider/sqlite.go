@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+
 	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 	_ "modernc.org/sqlite"
@@ -34,7 +35,7 @@ func (s *SQLiteProvider) GetProviderStatus() Status {
 
 // MigrateDatabase migrates the database to the latest version
 func (s *SQLiteProvider) MigrateDatabase() migration.Migration {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
@@ -69,13 +70,13 @@ func (s *SQLiteProvider) InitializeDatabase(schema string) error {
 
 // RevertDatabase reverts the database to the specified version
 func (s *SQLiteProvider) RevertDatabase(targetVersion int) error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 // ResetDatabase resets the database
 func (s *SQLiteProvider) ResetDatabase() error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
