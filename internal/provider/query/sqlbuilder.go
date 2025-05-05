@@ -2,69 +2,44 @@
 package query
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/inovacc/dataprovider/internal/provider"
 )
 
 const (
-	joinTemplate        = `"JOIN %s ON %s`
-	leftJoinTemplate    = `"LEFT JOIN %s ON %s`
-	rightJoinTemplate   = `"RIGHT JOIN %s ON %s`
-	whereTemplate       = `" WHERE %s`
-	groupByTemplate     = `"GROUP BY %s`
-	orderByTemplate     = `"ORDER BY %s`
-	limitTemplate       = `"LIMIT %d`
-	offsetTemplate      = `"OFFSET %d`
-	havingTemplate      = `"HAVING %s`
-	selectTemplate      = `"SELECT %s FROM %s`
-	createTableTemplate = `"CREATE TABLE %s (%s)`
-	dropTableTemplate   = `"DROP TABLE %s`
-	deleteTemplate      = `"DELETE FROM %s`
-	insertTemplate      = `"INSERT INTO %s (%s) VALUES (%s)`
-	updateTemplate      = `"UPDATE %s SET %s`
+	joinTemplate        = "JOIN %s ON %s"
+	leftJoinTemplate    = "LEFT JOIN %s ON %s"
+	rightJoinTemplate   = "RIGHT JOIN %s ON %s"
+	whereTemplate       = " WHERE %s"
+	groupByTemplate     = "GROUP BY %s"
+	orderByTemplate     = "ORDER BY %s"
+	limitTemplate       = "LIMIT %d"
+	offsetTemplate      = "OFFSET %d"
+	havingTemplate      = "HAVING %s"
+	selectTemplate      = "SELECT %s FROM %s"
+	createTableTemplate = "CREATE TABLE %s (%s)"
+	dropTableTemplate   = "DROP TABLE %s"
+	deleteTemplate      = "DELETE FROM %s"
+	insertTemplate      = "INSERT INTO %s (%s) VALUES (%s)"
+	updateTemplate      = "UPDATE %s SET %s"
+	updateSetTemplate   = "UPDATE %s SET %s"
 )
 
-// PlaceholderFormatter is dialect-aware: PostgresSQL uses $1, Oracle uses: p1, default uses?
-type PlaceholderFormatter interface {
-	ReplacePlaceholders(query string) string
-}
+type stringKinds string
 
-type postgresFormatter struct{}
-
-func (f *postgresFormatter) ReplacePlaceholders(query string) string {
-	for i := 1; strings.Contains(query, "?"); i++ {
-		query = strings.Replace(query, "?", fmt.Sprintf("$%d", i), 1)
-	}
-	return query
-}
-
-type oracleFormatter struct{}
-
-func (f *oracleFormatter) ReplacePlaceholders(query string) string {
-	for i := 1; strings.Contains(query, "?"); i++ {
-		query = strings.Replace(query, "?", fmt.Sprintf(":p%d", i), 1)
-	}
-	return query
-}
-
-type defaultFormatter struct{}
-
-func (f *defaultFormatter) ReplacePlaceholders(query string) string {
-	return query
-}
-
-func NewFormatter(driver string) PlaceholderFormatter {
-	switch driver {
-	case provider.PostgresSQLDatabaseProviderName:
-		return &postgresFormatter{}
-	case provider.OracleDatabaseProviderName:
-		return &oracleFormatter{}
-	default:
-		return &defaultFormatter{}
-	}
-}
+const (
+	stringKindSelect stringKinds = "select"
+	stringKindInsert stringKinds = "insert"
+	stringKindUpdate stringKinds = "update"
+	stringKindDelete stringKinds = "delete"
+	stringKindCreate stringKinds = "create"
+	stringKindDrop   stringKinds = "drop"
+)
 
 // SQLBuilder interface models typical SQL DDL and DML operations for various dialects
 type SQLBuilder interface {
@@ -93,25 +68,37 @@ type SQLBuilder interface {
 	On(condition string) SQLBuilder
 	WhenMatched(updateSet map[string]any) SQLBuilder
 	WhenNotMatchedInsert(columns []string, values []any) SQLBuilder
+	Union(other SQLBuilder) SQLBuilder
+	ExportAsJSON() (string, error)
+	ExportAsXML() (string, error)
+	StructToSQL(data any, table string, isInsert bool) (string, []any, error)
 }
 
 type queryBuilder struct {
-	opts       provider.Options
-	table      string
-	columns    []string
-	joins      []string
-	where      []string
-	groupBy    []string
-	having     []string
-	orderBy    []string
-	insertCols []string
-	insertVals []string
-	updateSet  []string
-	args       []any
-	limit      *int
-	offset     *int
-	special    string
-	formatter  PlaceholderFormatter
+	opts            provider.Options
+	kind            stringKinds
+	table           string
+	columns         []string
+	joins           []string
+	where           []string
+	groupBy         []string
+	having          []string
+	orderBy         []string
+	insertCols      []string
+	insertVals      []string
+	updateSet       []string
+	alias           string
+	rawClauses      []string
+	mergeTable      string
+	mergeOn         string
+	mergeMatchedSet []string
+	mergeInsertCols []string
+	mergeInsertVals []string
+	args            []any
+	limit           *int
+	offset          *int
+	special         string
+	formatter       PlaceholderFormatter
 }
 
 func NewQueryBuilder(opts provider.Options) SQLBuilder {
@@ -161,6 +148,7 @@ func (b *queryBuilder) WhenNotMatchedInsert(columns []string, values []any) SQLB
 }
 
 func (b *queryBuilder) InsertInto(table string, columns ...string) SQLBuilder {
+	b.kind = stringKindInsert
 	b.table = table
 	b.insertCols = columns
 	return b
@@ -177,6 +165,7 @@ func (b *queryBuilder) Values(args ...any) SQLBuilder {
 }
 
 func (b *queryBuilder) Update(table string) SQLBuilder {
+	b.kind = stringKindUpdate
 	b.table = table
 	return b
 }
@@ -188,21 +177,25 @@ func (b *queryBuilder) Set(column string, value any) SQLBuilder {
 }
 
 func (b *queryBuilder) CreateTable(table string, definition string) SQLBuilder {
+	b.kind = stringKindCreate
 	b.special = fmt.Sprintf(createTableTemplate, table, definition)
 	return b
 }
 
 func (b *queryBuilder) DropTable(table string) SQLBuilder {
+	b.kind = stringKindDrop
 	b.special = fmt.Sprintf(dropTableTemplate, table)
 	return b
 }
 
 func (b *queryBuilder) DeleteFrom(table string) SQLBuilder {
+	b.kind = stringKindDelete
 	b.special = fmt.Sprintf(deleteTemplate, table)
 	return b
 }
 
 func (b *queryBuilder) Select(table string, columns ...string) SQLBuilder {
+	b.kind = stringKindSelect
 	b.table = table
 	b.columns = columns
 	return b
@@ -255,22 +248,140 @@ func (b *queryBuilder) Offset(n int) SQLBuilder {
 	return b
 }
 
-func (b *queryBuilder) Clear() SQLBuilder {
-	b.table = ""
-	b.columns = nil
-	b.joins = nil
-	b.where = nil
-	b.groupBy = nil
-	b.having = nil
-	b.orderBy = nil
-	b.args = nil
-	b.limit = nil
-	b.offset = nil
-	b.insertCols = nil
-	b.insertVals = nil
-	b.updateSet = nil
-	b.special = ""
+func (b *queryBuilder) Union(other SQLBuilder) SQLBuilder {
+	s1, a1 := b.Build()
+	s2, a2 := other.Build()
+
+	if strings.Contains(s1, "$1") && strings.Contains(s2, "$1") {
+		s2 = strings.Replace(s2, "$1", "$2", 1)
+	}
+
+	combined := fmt.Sprintf("%s UNION %s", s1, s2)
+	b.rawClauses = []string{combined}
+	b.args = append(a1, a2...)
 	return b
+}
+
+func (b *queryBuilder) Clear() SQLBuilder {
+	q := &queryBuilder{
+		opts:      b.opts,
+		formatter: NewFormatter(b.opts.Driver),
+	}
+	*b = *q
+	return b
+}
+
+type StructuredQuery struct {
+	Kind            stringKinds       `json:"kind"`
+	Columns         []string          `json:"columns,omitempty"`
+	From            string            `json:"from,omitempty"`
+	Where           string            `json:"where,omitempty"`
+	GroupBy         []string          `json:"group_by,omitempty"`
+	Having          []string          `json:"having,omitempty"`
+	OrderBy         []string          `json:"order_by,omitempty"`
+	Limit           *int              `json:"limit,omitempty"`
+	Offset          *int              `json:"offset,omitempty"`
+	Args            []any             `json:"args,omitempty"`
+	Alias           string            `json:"alias,omitempty"`
+	Joins           []string          `json:"joins,omitempty"`
+	SQL             string            `json:"sql,omitempty"`
+	Special         string            `json:"special,omitempty"`
+	MergeTable      string            `json:"merge_table,omitempty"`
+	MergeOn         string            `json:"merge_on,omitempty"`
+	MergeMatchedSet []string          `json:"merge_matched,omitempty"`
+	MergeInsertCols []string          `json:"merge_insert_cols,omitempty"`
+	MergeInsertVals []string          `json:"merge_insert_vals,omitempty"`
+	RawClauses      []string          `json:"raw,omitempty"`
+	Queries         []StructuredQuery `json:"queries,omitempty"`
+}
+
+func (b *queryBuilder) ExportStructuredQuery() StructuredQuery {
+	query, args := b.Build()
+	return StructuredQuery{
+		Kind:            b.kind,
+		Columns:         b.columns,
+		From:            b.table,
+		Where:           strings.ReplaceAll(strings.Join(b.where, " AND "), "?", fmt.Sprintf("$%%d", 1)),
+		GroupBy:         b.groupBy,
+		Having:          b.having,
+		OrderBy:         b.orderBy,
+		Limit:           b.limit,
+		Offset:          b.offset,
+		Args:            args,
+		Alias:           b.alias,
+		Joins:           b.joins,
+		SQL:             query,
+		Special:         b.special,
+		MergeTable:      b.mergeTable,
+		MergeOn:         b.mergeOn,
+		MergeMatchedSet: b.mergeMatchedSet,
+		MergeInsertCols: b.mergeInsertCols,
+		MergeInsertVals: b.mergeInsertVals,
+		RawClauses:      b.rawClauses,
+	}
+}
+
+// ExportAsJSON converts the builder's current query state to a JSON object
+func (b *queryBuilder) ExportAsJSON() (string, error) {
+	sq := b.ExportStructuredQuery()
+	out, err := json.MarshalIndent(sq, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// ExportAsXML converts the builder's current query state to an XML structure
+func (b *queryBuilder) ExportAsXML() (string, error) {
+	query, args := b.Build()
+	data := struct {
+		SQL  string `xml:"sql"`
+		Args []any  `xml:"args>arg"`
+	}{
+		SQL:  query,
+		Args: args,
+	}
+	out, err := xml.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// StructToSQL converts a struct into SQL INSERT or UPDATE syntax using reflection (like GORM)
+func (b *queryBuilder) StructToSQL(data any, table string, isInsert bool) (string, []any, error) {
+	v := reflect.ValueOf(data)
+	if v.Kind() != reflect.Struct {
+		return "", nil, fmt.Errorf("StructToSQL expects a struct, got %s", v.Kind())
+	}
+
+	typeOf := v.Type()
+	var columns []string
+	var values []any
+	var placeholders []string
+
+	for i := 0; i < v.NumField(); i++ {
+		field := typeOf.Field(i)
+		tag := field.Tag.Get("db")
+		if tag == "-" || tag == "" {
+			continue
+		}
+		columns = append(columns, tag)
+		values = append(values, v.Field(i).Interface())
+		placeholders = append(placeholders, "?")
+	}
+
+	if isInsert {
+		query := fmt.Sprintf(insertTemplate, table, strings.Join(columns, ", "), strings.Join(placeholders, ", "))
+		return query, values, nil
+	}
+
+	set := make([]string, len(columns))
+	for i, col := range columns {
+		set[i] = fmt.Sprintf("%s = ?", col)
+	}
+	query := fmt.Sprintf(updateSetTemplate, table, strings.Join(set, ", "))
+	return query, values, nil
 }
 
 func (b *queryBuilder) Build() (string, []any) {
@@ -334,6 +445,10 @@ func (b *queryBuilder) Build() (string, []any) {
 	}
 
 	sb.WriteString(fmt.Sprintf(selectTemplate, columns, b.table))
+
+	if b.alias != "" {
+		sb.WriteString(fmt.Sprintf(" AS %s", b.alias))
+	}
 
 	if len(b.joins) > 0 {
 		sb.WriteString(" ")

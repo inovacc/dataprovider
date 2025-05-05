@@ -1,7 +1,10 @@
 package query
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/inovacc/dataprovider/internal/provider"
@@ -325,16 +328,12 @@ func TestUnionQueries(t *testing.T) {
 		Select("users", "id", "email").
 		Where("role = ?", "admin")
 
-	s1, a1 := q1.Build()
-
 	q2 := NewQueryBuilder(opts).
 		Select("users", "id", "email").
 		Where("role = ?", "manager")
 
-	s2, a2 := q2.Build()
-
-	sql := fmt.Sprintf("%s UNION %s", s1, s2)
-	args := append(a1, a2...)
+	query := q1.Union(q2)
+	sql, args := query.Build()
 
 	expectedSQL := "SELECT id, email FROM users WHERE role = $1 UNION SELECT id, email FROM users WHERE role = $2"
 
@@ -359,6 +358,83 @@ func TestCaseWhenClause(t *testing.T) {
 	}
 }
 
+func TestWithCTE(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	cte := NewQueryBuilder(opts).
+		Select("payments", "user_id", "SUM(amount) AS total").
+		GroupBy("user_id")
+
+	cteSQL, cteArgs := cte.Build()
+	main := NewQueryBuilder(opts).
+		Select("summary", "user_id", "total").
+		Raw(fmt.Sprintf("WITH summary AS (%s) SELECT user_id, total FROM summary WHERE total > ?", cteSQL), append(cteArgs, 1000)...) // injects entire CTE with final condition
+
+	sql, args := main.Build()
+	expectedSQL := "WITH summary AS (SELECT user_id, SUM(amount) AS total FROM payments GROUP BY user_id) SELECT user_id, total FROM summary WHERE total > $1"
+
+	if sql != expectedSQL {
+		t.Errorf("Expected SQL: %q\nGot: %q", expectedSQL, sql)
+	}
+	if len(args) != 1 || args[0] != 1000 {
+		t.Errorf("Expected args to be [1000], got %v", args)
+	}
+}
+
+func TestExistsClause(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	sub := NewQueryBuilder(opts).
+		Select("orders", "1").Where("orders.user_id = users.id")
+	subSQL, subArgs := sub.Build()
+
+	q := NewQueryBuilder(opts).
+		Select("users", "id", "email").
+		Where(fmt.Sprintf("EXISTS (%s)", subSQL), subArgs...)
+
+	sql, args := q.Build()
+	expectedSQL := "SELECT id, email FROM users WHERE EXISTS (SELECT 1 FROM orders WHERE orders.user_id = users.id)"
+
+	if sql != expectedSQL {
+		t.Errorf("Expected SQL: %q\nGot: %q", expectedSQL, sql)
+	}
+	if len(args) != 0 {
+		t.Errorf("Expected no args, got %v", args)
+	}
+}
+
+func TestMultiRowInsert(t *testing.T) {
+	opts := provider.Options{Driver: provider.MySQLDatabaseProviderName}
+	builder := NewQueryBuilder(opts)
+	values := []any{"john@example.com", "doe@example.com"}
+	placeholders := []string{"(?)", "(?)"} // simulated
+
+	builder.Raw(fmt.Sprintf("INSERT INTO users (email) VALUES %s", strings.Join(placeholders, ", ")), values...)
+	sql, args := builder.Build()
+	expectedSQL := "INSERT INTO users (email) VALUES (?), (?)"
+
+	if sql != expectedSQL {
+		t.Errorf("Expected SQL: %q\nGot: %q", expectedSQL, sql)
+	}
+	if len(args) != 2 || args[0] != "john@example.com" || args[1] != "doe@example.com" {
+		t.Errorf("Expected args to be correct, got %v", args)
+	}
+}
+
+func TestTransactionalQuery(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	start := NewQueryBuilder(opts).Raw("BEGIN")
+	commit := NewQueryBuilder(opts).Raw("COMMIT")
+
+	s1, _ := start.Build()
+	s2, _ := commit.Build()
+
+	if s1 != "BEGIN" {
+		t.Errorf("Expected BEGIN, got %q", s1)
+	}
+	if s2 != "COMMIT" {
+		t.Errorf("Expected COMMIT, got %q", s2)
+	}
+}
+
 func TestWindowFunction(t *testing.T) {
 	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
 	q := NewQueryBuilder(opts).
@@ -369,5 +445,50 @@ func TestWindowFunction(t *testing.T) {
 
 	if sql != expectedSQL {
 		t.Errorf("Expected SQL: %q\nGot: %q", expectedSQL, sql)
+	}
+}
+
+func TestExportAsJSON(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	builder := NewQueryBuilder(opts).
+		Select("users", "id", "email").
+		Where("email = ?", "test@example.com")
+
+	jsonOut, err := builder.ExportAsJSON()
+	if err != nil {
+		t.Fatalf("ExportAsJSON failed: %v", err)
+	}
+
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(jsonOut), &parsed); err != nil {
+		t.Fatalf("Invalid JSON output: %v", err)
+	}
+
+	if parsed["sql"] == "" {
+		t.Errorf("Expected non-empty SQL string in JSON output")
+	}
+}
+
+func TestExportAsXML(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	builder := NewQueryBuilder(opts).
+		Select("users", "id", "email").
+		Where("email = ?", "john@example.com")
+
+	xmlOut, err := builder.ExportAsXML()
+	if err != nil {
+		t.Fatalf("ExportAsXML failed: %v", err)
+	}
+
+	var parsed struct {
+		SQL  string   `xml:"sql"`
+		Args []string `xml:"args>arg"`
+	}
+	if err := xml.Unmarshal([]byte(xmlOut), &parsed); err != nil {
+		t.Fatalf("Invalid XML output: %v", err)
+	}
+
+	if parsed.SQL == "" {
+		t.Errorf("Expected non-empty SQL string in XML output")
 	}
 }
