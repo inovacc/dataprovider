@@ -1,7 +1,6 @@
 package query
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"strings"
@@ -459,13 +458,10 @@ func TestExportAsJSON(t *testing.T) {
 		t.Fatalf("ExportAsJSON failed: %v", err)
 	}
 
-	var parsed map[string]any
-	if err := json.Unmarshal([]byte(jsonOut), &parsed); err != nil {
-		t.Fatalf("Invalid JSON output: %v", err)
-	}
+	expedted := "{\"kind\":\"select\",\"columns\":[\"id\",\"email\"],\"from\":\"users\",\"where\":\"email = $1\",\"sql\":\"SELECT id, email FROM users WHERE email = $1\",\"args\":[\"test@example.com\"]}"
 
-	if parsed["sql"] == "" {
-		t.Errorf("Expected non-empty SQL string in JSON output")
+	if jsonOut != expedted {
+		t.Errorf("Expected JSON output: %q\nGot: %q", expedted, jsonOut)
 	}
 }
 

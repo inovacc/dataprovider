@@ -263,11 +263,7 @@ func (b *queryBuilder) Union(other SQLBuilder) SQLBuilder {
 }
 
 func (b *queryBuilder) Clear() SQLBuilder {
-	q := &queryBuilder{
-		opts:      b.opts,
-		formatter: NewFormatter(b.opts.Driver),
-	}
-	*b = *q
+	*b = queryBuilder{opts: b.opts, formatter: NewFormatter(b.opts.Driver)}
 	return b
 }
 
@@ -281,7 +277,6 @@ type StructuredQuery struct {
 	OrderBy         []string          `json:"order_by,omitempty"`
 	Limit           *int              `json:"limit,omitempty"`
 	Offset          *int              `json:"offset,omitempty"`
-	Args            []any             `json:"args,omitempty"`
 	Alias           string            `json:"alias,omitempty"`
 	Joins           []string          `json:"joins,omitempty"`
 	SQL             string            `json:"sql,omitempty"`
@@ -293,17 +288,29 @@ type StructuredQuery struct {
 	MergeInsertVals []string          `json:"merge_insert_vals,omitempty"`
 	RawClauses      []string          `json:"raw,omitempty"`
 	Queries         []StructuredQuery `json:"queries,omitempty"`
+	Args            []any             `json:"args,omitempty"`
+	Data            any               `json:"data,omitempty"`
 }
 
+// ExportStructuredQuery decomposes the builder into a StructuredQuery
 func (b *queryBuilder) ExportStructuredQuery() StructuredQuery {
+	formatStrings := func(clauses []string) []string {
+		formatted := make([]string, len(clauses))
+		for i, clause := range clauses {
+			formatted[i] = NewFormatter(b.opts.Driver).ReplacePlaceholders(clause)
+		}
+		return formatted
+	}
+
 	query, args := b.Build()
+	formatter := NewFormatter(b.opts.Driver)
 	return StructuredQuery{
 		Kind:            b.kind,
 		Columns:         b.columns,
 		From:            b.table,
-		Where:           strings.ReplaceAll(strings.Join(b.where, " AND "), "?", fmt.Sprintf("$%%d", 1)),
+		Where:           formatter.ReplacePlaceholders(strings.Join(b.where, " AND ")),
 		GroupBy:         b.groupBy,
-		Having:          b.having,
+		Having:          formatStrings(b.having),
 		OrderBy:         b.orderBy,
 		Limit:           b.limit,
 		Offset:          b.offset,
@@ -313,18 +320,43 @@ func (b *queryBuilder) ExportStructuredQuery() StructuredQuery {
 		SQL:             query,
 		Special:         b.special,
 		MergeTable:      b.mergeTable,
-		MergeOn:         b.mergeOn,
-		MergeMatchedSet: b.mergeMatchedSet,
+		MergeOn:         formatter.ReplacePlaceholders(b.mergeOn),
+		MergeMatchedSet: formatStrings(b.mergeMatchedSet),
 		MergeInsertCols: b.mergeInsertCols,
 		MergeInsertVals: b.mergeInsertVals,
-		RawClauses:      b.rawClauses,
+		RawClauses:      formatStrings(b.rawClauses),
 	}
+}
+
+// ImportStructuredQuery applies a StructuredQuery to a queryBuilder
+func (b *queryBuilder) ImportStructuredQuery(s StructuredQuery) SQLBuilder {
+	b.columns = s.Columns
+	b.table = s.From
+	if s.Where != "" {
+		b.Where(s.Where)
+	}
+	b.groupBy = s.GroupBy
+	b.having = s.Having
+	b.orderBy = s.OrderBy
+	b.limit = s.Limit
+	b.offset = s.Offset
+	b.args = s.Args
+	b.alias = s.Alias
+	b.joins = s.Joins
+	b.special = s.Special
+	b.mergeTable = s.MergeTable
+	b.mergeOn = s.MergeOn
+	b.mergeMatchedSet = s.MergeMatchedSet
+	b.mergeInsertCols = s.MergeInsertCols
+	b.mergeInsertVals = s.MergeInsertVals
+	b.rawClauses = s.RawClauses
+	return b
 }
 
 // ExportAsJSON converts the builder's current query state to a JSON object
 func (b *queryBuilder) ExportAsJSON() (string, error) {
 	sq := b.ExportStructuredQuery()
-	out, err := json.MarshalIndent(sq, "", "  ")
+	out, err := json.Marshal(sq)
 	if err != nil {
 		return "", err
 	}
