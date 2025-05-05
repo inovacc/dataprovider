@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/inovacc/dataprovider/internal/provider"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -71,6 +72,7 @@ type SQLBuilder interface {
 	Union(other SQLBuilder) SQLBuilder
 	ExportAsJSON() (string, error)
 	ExportAsXML() (string, error)
+	ExportAsYAML() (string, error)
 	StructToSQL(data any, table string, isInsert bool) (string, []any, error)
 }
 
@@ -268,28 +270,29 @@ func (b *queryBuilder) Clear() SQLBuilder {
 }
 
 type StructuredQuery struct {
-	Kind            stringKinds       `json:"kind"`
-	Columns         []string          `json:"columns,omitempty"`
-	From            string            `json:"from,omitempty"`
-	Where           string            `json:"where,omitempty"`
-	GroupBy         []string          `json:"group_by,omitempty"`
-	Having          []string          `json:"having,omitempty"`
-	OrderBy         []string          `json:"order_by,omitempty"`
-	Limit           *int              `json:"limit,omitempty"`
-	Offset          *int              `json:"offset,omitempty"`
-	Alias           string            `json:"alias,omitempty"`
-	Joins           []string          `json:"joins,omitempty"`
-	SQL             string            `json:"sql,omitempty"`
-	Special         string            `json:"special,omitempty"`
-	MergeTable      string            `json:"merge_table,omitempty"`
-	MergeOn         string            `json:"merge_on,omitempty"`
-	MergeMatchedSet []string          `json:"merge_matched,omitempty"`
-	MergeInsertCols []string          `json:"merge_insert_cols,omitempty"`
-	MergeInsertVals []string          `json:"merge_insert_vals,omitempty"`
-	RawClauses      []string          `json:"raw,omitempty"`
-	Queries         []StructuredQuery `json:"queries,omitempty"`
-	Args            []any             `json:"args,omitempty"`
-	Data            any               `json:"data,omitempty"`
+	XMLName         xml.Name          `json:"-" xml:"query"`
+	Kind            stringKinds       `json:"kind" xml:"kind"`
+	Columns         []string          `json:"columns,omitempty" xml:"columns"`
+	From            string            `json:"from,omitempty" xml:"from"`
+	Where           string            `json:"where,omitempty" xml:"where"`
+	GroupBy         []string          `json:"groupBy,omitempty" xml:"groupBy"`
+	Having          []string          `json:"having,omitempty" xml:"having"`
+	OrderBy         []string          `json:"orderBy,omitempty" xml:"orderBy"`
+	Limit           *int              `json:"limit,omitempty" xml:"limit"`
+	Offset          *int              `json:"offset,omitempty" xml:"offset"`
+	Alias           string            `json:"alias,omitempty" xml:"alias"`
+	Joins           []string          `json:"joins,omitempty" xml:"joins"`
+	SQL             string            `json:"sql,omitempty" xml:"SQL"`
+	Special         string            `json:"special,omitempty" xml:"special"`
+	MergeTable      string            `json:"mergeTable,omitempty" xml:"mergeTable"`
+	MergeOn         string            `json:"mergeOn,omitempty" xml:"mergeOn"`
+	MergeMatchedSet []string          `json:"mergeMatchedSet,omitempty" xml:"mergeMatchedSet"`
+	MergeInsertCols []string          `json:"mergeInsertCols,omitempty" xml:"mergeInsertCols"`
+	MergeInsertVals []string          `json:"mergeInsertVals,omitempty" xml:"mergeInsertVals"`
+	RawClauses      []string          `json:"raw,omitempty" xml:"rawClauses"`
+	Queries         []StructuredQuery `json:"queries,omitempty" xml:"queries"`
+	Args            []any             `json:"args,omitempty" xml:"args"`
+	Data            any               `json:"data,omitempty" xml:"data"`
 }
 
 // ExportStructuredQuery decomposes the builder into a StructuredQuery
@@ -325,6 +328,7 @@ func (b *queryBuilder) ExportStructuredQuery() StructuredQuery {
 		MergeInsertCols: b.mergeInsertCols,
 		MergeInsertVals: b.mergeInsertVals,
 		RawClauses:      formatStrings(b.rawClauses),
+		XMLName:         xml.Name{Local: "query"},
 	}
 }
 
@@ -365,15 +369,18 @@ func (b *queryBuilder) ExportAsJSON() (string, error) {
 
 // ExportAsXML converts the builder's current query state to an XML structure
 func (b *queryBuilder) ExportAsXML() (string, error) {
-	query, args := b.Build()
-	data := struct {
-		SQL  string `xml:"sql"`
-		Args []any  `xml:"args>arg"`
-	}{
-		SQL:  query,
-		Args: args,
+	sq := b.ExportStructuredQuery()
+	out, err := xml.Marshal(sq)
+	if err != nil {
+		return "", err
 	}
-	out, err := xml.MarshalIndent(data, "", "  ")
+	return string(out), nil
+}
+
+// ExportAsYaml converts the builder's current query state to an YAML structure
+func (b *queryBuilder) ExportAsYAML() (string, error) {
+	sq := b.ExportStructuredQuery()
+	out, err := yaml.Marshal(sq)
 	if err != nil {
 		return "", err
 	}

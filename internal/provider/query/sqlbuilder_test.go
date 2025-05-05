@@ -1,7 +1,6 @@
 package query
 
 import (
-	"encoding/xml"
 	"fmt"
 	"strings"
 	"testing"
@@ -476,15 +475,55 @@ func TestExportAsXML(t *testing.T) {
 		t.Fatalf("ExportAsXML failed: %v", err)
 	}
 
-	var parsed struct {
-		SQL  string   `xml:"sql"`
-		Args []string `xml:"args>arg"`
+	expected := "<query><kind>select</kind><columns>id</columns><columns>email</columns><from>users</from><where>email = $1</where><alias></alias><SQL>SELECT id, email FROM users WHERE email = $1</SQL><special></special><mergeTable></mergeTable><mergeOn></mergeOn><args>john@example.com</args></query>"
+
+	if xmlOut != expected {
+		t.Errorf("Expected XML output: %q\nGot: %q", expected, xmlOut)
 	}
-	if err := xml.Unmarshal([]byte(xmlOut), &parsed); err != nil {
-		t.Fatalf("Invalid XML output: %v", err)
+}
+
+func TestExportAsYaml(t *testing.T) {
+	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
+	builder := NewQueryBuilder(opts).
+		Select("users", "id", "email").
+		Where("email = ?", "john@example.com")
+
+	yamlOut, err := builder.ExportAsYAML()
+	if err != nil {
+		t.Fatalf("ExportAsYAML failed: %v", err)
 	}
 
-	if parsed.SQL == "" {
-		t.Errorf("Expected non-empty SQL string in XML output")
+	expected := `xmlname:
+    space: ""
+    local: query
+kind: select
+columns:
+    - id
+    - email
+from: users
+where: email = $1
+groupby: []
+having: []
+orderby: []
+limit: null
+offset: null
+alias: ""
+joins: []
+sql: SELECT id, email FROM users WHERE email = $1
+special: ""
+mergetable: ""
+mergeon: ""
+mergematchedset: []
+mergeinsertcols: []
+mergeinsertvals: []
+rawclauses: []
+queries: []
+args:
+    - john@example.com
+data: null
+`
+
+	if yamlOut != expected {
+		t.Errorf("Expected YAML output: %q\nGot: %q", expected, yamlOut)
 	}
 }
