@@ -29,6 +29,7 @@ const (
 	insertTemplate      = "INSERT INTO %s (%s) VALUES (%s)"
 	updateTemplate      = "UPDATE %s SET %s"
 	updateSetTemplate   = "UPDATE %s SET %s"
+	andTemplate         = "(%s) AND (%s)"
 )
 
 type stringKinds string
@@ -46,6 +47,7 @@ const (
 type SQLBuilder interface {
 	Select(table string, columns ...string) SQLBuilder
 	Where(condition string, args ...any) SQLBuilder
+	And(condition string, args ...any) SQLBuilder
 	Join(table, onCondition string) SQLBuilder
 	LeftJoin(table, onCondition string) SQLBuilder
 	RightJoin(table, onCondition string) SQLBuilder
@@ -112,6 +114,12 @@ func NewQueryBuilder(opts provider.Options) SQLBuilder {
 
 func (b *queryBuilder) As(alias string) SQLBuilder {
 	b.alias = alias
+	return b
+}
+
+func (b *queryBuilder) And(condition string, args ...any) SQLBuilder {
+	b.where = append(b.where, fmt.Sprintf(andTemplate, b.where[len(b.where)-1], condition))
+	b.args = append(b.args, args...)
 	return b
 }
 
@@ -245,11 +253,13 @@ func (b *queryBuilder) Limit(n int) SQLBuilder {
 	return b
 }
 
+// Offset sets the offset for the query.
 func (b *queryBuilder) Offset(n int) SQLBuilder {
 	b.offset = &n
 	return b
 }
 
+// Union combines two queries into a single UNION query
 func (b *queryBuilder) Union(other SQLBuilder) SQLBuilder {
 	s1, a1 := b.Build()
 	s2, a2 := other.Build()
@@ -264,6 +274,7 @@ func (b *queryBuilder) Union(other SQLBuilder) SQLBuilder {
 	return b
 }
 
+// Clear resets the builder to its initial state
 func (b *queryBuilder) Clear() SQLBuilder {
 	*b = queryBuilder{opts: b.opts, formatter: NewFormatter(b.opts.Driver)}
 	return b
@@ -377,7 +388,7 @@ func (b *queryBuilder) ExportAsXML() (string, error) {
 	return string(out), nil
 }
 
-// ExportAsYaml converts the builder's current query state to an YAML structure
+// ExportAsYAML converts the builder's current query state to an YAML structure
 func (b *queryBuilder) ExportAsYAML() (string, error) {
 	sq := b.ExportStructuredQuery()
 	out, err := yaml.Marshal(sq)
@@ -423,6 +434,49 @@ func (b *queryBuilder) StructToSQL(data any, table string, isInsert bool) (strin
 	return query, values, nil
 }
 
+// StructToSQLWithPK converts a struct into SQL INSERT or UPDATE syntax using reflection (like GORM)
+// and sets the primary key column to the value of the primary key field
+func (b *queryBuilder) StructToSQLWithPK(data any, table string, isInsert bool) (string, []any, error) {
+	v := reflect.ValueOf(data)
+	if v.Kind() != reflect.Struct {
+		return "", nil, fmt.Errorf("StructToSQL expects a struct, got %s", v.Kind())
+	}
+
+	typeOf := v.Type()
+	var columns []string
+	var values []any
+	var placeholders []string
+
+	for i := 0; i < v.NumField(); i++ {
+		field := typeOf.Field(i)
+		tag := field.Tag.Get("db")
+		if tag == "-" || tag == "" {
+			continue
+		}
+		columns = append(columns, tag)
+		values = append(values, v.Field(i).Interface())
+	}
+
+	if isInsert {
+		query := fmt.Sprintf(insertTemplate, table, strings.Join(columns, ", "), strings.Join(placeholders, ", "))
+		return query, values, nil
+	}
+
+	set := make([]string, len(columns))
+	for i, col := range columns {
+		set[i] = fmt.Sprintf("%s = ?", col)
+	}
+	query := fmt.Sprintf(updateSetTemplate, table, strings.Join(set, ", "))
+
+	pk := typeOf.Field(0).Tag.Get("db")
+	if pk == "" {
+		return "", nil, fmt.Errorf("StructToSQLWithPK expects a struct with a primary key field, got %s", typeOf.Field(0).Name)
+	}
+
+	return query, append(values, data.(map[string]any)[pk]), nil
+}
+
+// Build builds the query and returns the query string and a slice of arguments
 func (b *queryBuilder) Build() (string, []any) {
 	if b.mergeTable != "" {
 		var sb strings.Builder
