@@ -5,6 +5,7 @@ package provider
 import (
 	"context"
 	"fmt"
+
 	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -35,7 +36,7 @@ func (p *PGSQLProvider) GetProviderStatus() Status {
 }
 
 func (p *PGSQLProvider) MigrateDatabase() migration.Migration {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
@@ -64,12 +65,12 @@ func (p *PGSQLProvider) InitializeDatabase(schema string) error {
 }
 
 func (p *PGSQLProvider) RevertDatabase(targetVersion int) error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (p *PGSQLProvider) ResetDatabase() error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 

@@ -13,7 +13,7 @@ const (
 	// PostgresSQLDatabaseProviderName defines the name for PostgresSQL database Provider
 	PostgresSQLDatabaseProviderName string = "postgres"
 
-	// MemoryDataProviderName defines the name for memory provider using SQLite in-memory database Provider
+	// MemoryDataProviderName defines the name for a memory provider using SQLite in-memory database Provider
 	MemoryDataProviderName string = "memory"
 )
 
