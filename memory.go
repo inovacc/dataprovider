@@ -12,9 +12,10 @@ type MemoryProvider struct {
 	dbHandle *sqlx.DB
 	context.Context
 	options *Options
+	dialect Dialect
 }
 
-func (m *MemoryProvider) SqlBuilder() SQLBuilder {
+func (m *MemoryProvider) QueryBuilder() SQLBuilder {
 	return NewQueryBuilder(m.options)
 }
 
@@ -81,7 +82,7 @@ func (m *MemoryProvider) ResetDatabase() error {
 }
 
 // NewMemoryProvider creates a new memory provider instance
-func NewMemoryProvider(options *Options) (*MemoryProvider, error) {
+func NewMemoryProvider(options *Options) (Provider, error) {
 	driverName = options.Driver
 	dbHandle, err := sqlx.Open("sqlite", options.ConnectionString)
 	if err != nil {
@@ -96,5 +97,6 @@ func NewMemoryProvider(options *Options) (*MemoryProvider, error) {
 		dbHandle: dbHandle,
 		Context:  options.Context,
 		options:  options,
+		dialect:  NewDialect(options),
 	}, nil
 }

@@ -8,6 +8,39 @@ import (
 	"github.com/spf13/afero"
 )
 
+type databaseKind string
+
+const (
+	// OracleDatabaseProviderName defines the name for Oracle database Provider
+	OracleDatabaseProviderName databaseKind = "oracle"
+
+	// SQLiteDataProviderName defines the name for SQLite database Provider
+	SQLiteDataProviderName databaseKind = "sqlite"
+
+	// MySQLDatabaseProviderName defines the name for MySQL database Provider
+	MySQLDatabaseProviderName databaseKind = "mysql"
+
+	// PostgresSQLDatabaseProviderName defines the name for PostgresSQL database Provider
+	PostgresSQLDatabaseProviderName databaseKind = "postgres"
+
+	// MemoryDataProviderName defines the name for a memory provider using SQLite in-memory database Provider
+	MemoryDataProviderName databaseKind = "memory"
+
+	// SQLServerDatabaseProviderName defines the name for SQL Server database Provider
+	SQLServerDatabaseProviderName databaseKind = "sqlserver"
+
+	// MariadbDatabaseProviderName defines the name for MariaDB database Provider
+	MariadbDatabaseProviderName databaseKind = "mariadb"
+)
+
+var driverName databaseKind
+
+type Status struct {
+	Driver   databaseKind `json:"driver"`
+	Error    error        `json:"error"`
+	IsActive bool         `json:"is_active"`
+}
+
 type Provider interface {
 	// Disconnect disconnects from the data provider
 	Disconnect() error
@@ -36,7 +69,7 @@ type Provider interface {
 	// GetProviderStatus returns the status of the provider
 	GetProviderStatus() Status
 
-	SqlBuilder() SQLBuilder
+	QueryBuilder() SQLBuilder
 }
 
 // NewDataProvider creates a new data provider instance

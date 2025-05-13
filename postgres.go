@@ -14,6 +14,7 @@ import (
 type PGSQLProvider struct {
 	dbHandle *sqlx.DB
 	context.Context
+	dialect Dialect
 }
 
 func (p *PGSQLProvider) NewSQLBuilder() SQLBuilder {
@@ -74,7 +75,7 @@ func (p *PGSQLProvider) ResetDatabase() error {
 }
 
 // NewPostgresSQLProvider creates a new PostgresSQL provider instance
-func NewPostgresSQLProvider(options *Options) (*PGSQLProvider, error) {
+func NewPostgresSQLProvider(options *Options) (Provider, error) {
 	driverName = options.Driver
 	dataSourceName := fmt.Sprintf("user=%s dbname=%s password=%s port=%d host=%s sslmode=disable",
 		options.Username, options.Name, options.Password, options.Port, options.Host)
@@ -99,5 +100,6 @@ func NewPostgresSQLProvider(options *Options) (*PGSQLProvider, error) {
 		dbHandle: dbHandle,
 		Context:  options.Context,
 		options:  options,
+		dialect:  NewDialect(options),
 	}, nil
 }

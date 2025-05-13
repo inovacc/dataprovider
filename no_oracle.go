@@ -9,9 +9,10 @@ import (
 // ORASQLProvider defines the auth provider for an Oracle database
 type ORASQLProvider struct {
 	options *Options
+	dialect Dialect
 }
 
-func (o *ORASQLProvider) SqlBuilder() SQLBuilder {
+func (o *ORASQLProvider) QueryBuilder() SQLBuilder {
 	return NewQueryBuilder(o.options)
 }
 
@@ -35,7 +36,7 @@ func (o *ORASQLProvider) ReconnectDatabase() error {
 	panic("implement me")
 }
 
-func (o *ORASQLProvider) InitializeDatabase(schema string) error {
+func (o *ORASQLProvider) InitializeDatabase(_ string) error {
 	// TODO implement me
 	panic("implement me")
 }
@@ -45,7 +46,7 @@ func (o *ORASQLProvider) MigrateDatabase() Migration {
 	panic("implement me")
 }
 
-func (o *ORASQLProvider) RevertDatabase(targetVersion int) error {
+func (o *ORASQLProvider) RevertDatabase(_ int) error {
 	// TODO implement me
 	panic("implement me")
 }
@@ -61,6 +62,6 @@ func (o *ORASQLProvider) GetProviderStatus() Status {
 }
 
 // NewOracleProvider creates a new Oracle provider instance
-func NewOracleProvider(options *Options) (*ORASQLProvider, error) {
+func NewOracleProvider(_ *Options) (Provider, error) {
 	panic("to use this driver you need to build with [oracle] tag")
 }

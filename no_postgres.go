@@ -9,9 +9,10 @@ import (
 // PGSQLProvider defines the auth provider for PostgresSQL database
 type PGSQLProvider struct {
 	options *Options
+	dialect Dialect
 }
 
-func (p *PGSQLProvider) SqlBuilder() SQLBuilder {
+func (p *PGSQLProvider) QueryBuilder() SQLBuilder {
 	return NewQueryBuilder(p.options)
 }
 
@@ -35,7 +36,7 @@ func (p *PGSQLProvider) ReconnectDatabase() error {
 	panic("implement me")
 }
 
-func (p *PGSQLProvider) InitializeDatabase(schema string) error {
+func (p *PGSQLProvider) InitializeDatabase(_ string) error {
 	// TODO implement me
 	panic("implement me")
 }
@@ -45,7 +46,7 @@ func (p *PGSQLProvider) MigrateDatabase() Migration {
 	panic("implement me")
 }
 
-func (p *PGSQLProvider) RevertDatabase(targetVersion int) error {
+func (p *PGSQLProvider) RevertDatabase(_ int) error {
 	// TODO implement me
 	panic("implement me")
 }
@@ -61,6 +62,6 @@ func (p *PGSQLProvider) GetProviderStatus() Status {
 }
 
 // NewPostgreSQLProvider creates a new PostgreSQL provider instance
-func NewPostgreSQLProvider(options *Options) (*PGSQLProvider, error) {
+func NewPostgreSQLProvider(_ *Options) (Provider, error) {
 	panic("to use this driver you need to build with [postgres] tag")
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type Options struct {
-	Driver           string
+	Driver           databaseKind
 	Name             string
 	Host             string
 	Port             int
@@ -72,7 +72,7 @@ func WithName(name string) OptionFunc {
 }
 
 // WithDriver sets db driver
-func WithDriver(driver string) OptionFunc {
+func WithDriver(driver databaseKind) OptionFunc {
 	return func(o *Options) {
 		o.Driver = driver
 	}

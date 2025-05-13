@@ -6,9 +6,87 @@ import (
 	"testing"
 )
 
+func TestQuery(t *testing.T) {
+	query := NewQueryBuilder(&Options{Driver: SQLiteDataProviderName}).
+		Table("users").
+		Select("id", "name", "email").
+		Where("age > 18").
+		OrderBy("name ASC").
+		Limit(10).
+		Offset(5).
+		Build()
+
+	t.Log("SELECT Query:")
+	t.Log(query)
+
+	if query != "SELECT id, name, email FROM users WHERE age > 18 ORDER BY name ASC LIMIT 10 OFFSET 5" {
+		t.Error("SELECT Query is not correct")
+	}
+}
+
+func TestQuerySchema(t *testing.T) {
+	query := NewQueryBuilder(&Options{Driver: SQLiteDataProviderName}).
+		Schema("public").
+		Table("users").
+		Select("id", "name", "email").
+		Where("age > 18").
+		OrderBy("name ASC").
+		Limit(10).
+		Offset(5).
+		Build()
+
+	t.Log("SELECT Query:")
+	t.Log(query)
+
+	if query != "SELECT id, name, email FROM public.users WHERE age > 18 ORDER BY name ASC LIMIT 10 OFFSET 5" {
+		t.Error("SELECT Query is not correct")
+	}
+}
+
+func TestQueryCreate(t *testing.T) {
+	query, _ := NewQueryBuilder(&Options{Driver: SQLiteDataProviderName}).
+		CreateTable("users").
+		IfNotExists().
+		Columns(
+			Column("id").Type("SERIAL").PrimaryKey(),
+			Column("first_name").Type("TEXT"),
+			Column("last_name").Type("TEXT"),
+			Column("email").Type("TEXT"),
+			Column("ip_address").Type("TEXT"),
+			Column("city").Type("TEXT"),
+		).
+		Build()
+
+	t.Log("CREATE TABLE Query:")
+	t.Log(query)
+
+	if query != "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, first_name TEXT, last_name TEXT, email TEXT, ip_address TEXT, city TEXT)" {
+		t.Error("CREATE TABLE Query is not correct")
+	}
+}
+
+func TestQueryUpdate(t *testing.T) {
+	query := NewQueryBuilder(&Options{Driver: SQLiteDataProviderName}).
+		Table("users").
+		Update().
+		Set(map[string]any{
+			"name":  "John Doe",
+			"email": "test@admin.com",
+		}).
+		Where("id = 1").
+		Build()
+
+	t.Log("UPDATE Query:")
+	t.Log(query)
+
+	if query != "UPDATE users SET name = 'John Doe', email = 'test@admin.com' WHERE id = 1" {
+		t.Error("UPDATE Query is not correct")
+	}
+}
+
 func TestQueryBuilderVariants(t *testing.T) {
 	tests := []struct {
-		driver      string
+		driver      databaseKind
 		expectedSQL string
 	}{
 		{
@@ -34,7 +112,7 @@ func TestQueryBuilderVariants(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.driver, func(t *testing.T) {
+		t.Run(string(tt.driver), func(t *testing.T) {
 			opt := &Options{Driver: tt.driver}
 			qb := NewQueryBuilder(opt)
 			sql, _ := qb.Select("users", "id", "name").
@@ -52,7 +130,7 @@ func TestQueryBuilderVariants(t *testing.T) {
 
 func TestCreateDropDeleteSQL(t *testing.T) {
 	tests := []struct {
-		driver       string
+		driver       databaseKind
 		operation    string
 		builderFunc  func(SQLBuilder) (string, []any)
 		expectedSQLs map[string]string
@@ -106,7 +184,7 @@ func TestCreateDropDeleteSQL(t *testing.T) {
 			sql, _ := tt.builderFunc(builder)
 
 			key := tt.driver
-			if val, ok := tt.expectedSQLs[key]; ok && sql != val {
+			if val, ok := tt.expectedSQLs[string(key)]; ok && sql != val {
 				t.Errorf("expected SQL %q, got %q", val, sql)
 			}
 		})
@@ -115,7 +193,7 @@ func TestCreateDropDeleteSQL(t *testing.T) {
 
 func TestInsertAndUpdateSQL(t *testing.T) {
 	tests := []struct {
-		driver       string
+		driver       databaseKind
 		opType       string
 		builderFunc  func(SQLBuilder) (string, []any)
 		expectedSQLs map[string]string
@@ -170,7 +248,7 @@ func TestInsertAndUpdateSQL(t *testing.T) {
 			builder := NewQueryBuilder(opt)
 			sql, _ := tt.builderFunc(builder)
 
-			expected := tt.expectedSQLs[tt.driver]
+			expected := tt.expectedSQLs[string(tt.driver)]
 			if sql != expected {
 				t.Errorf("expected SQL %q, got %q", expected, sql)
 			}
@@ -180,7 +258,7 @@ func TestInsertAndUpdateSQL(t *testing.T) {
 
 func TestMergeBuilder(t *testing.T) {
 	tests := []struct {
-		driver   string
+		driver   databaseKind
 		expected string
 	}{
 		{
@@ -194,7 +272,7 @@ func TestMergeBuilder(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.driver, func(t *testing.T) {
+		t.Run(string(tt.driver), func(t *testing.T) {
 			opt := &Options{Driver: tt.driver}
 			q := NewQueryBuilder(opt).
 				MergeInto("users").

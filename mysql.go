@@ -14,6 +14,8 @@ import (
 type MySQLProvider struct {
 	dbHandle *sqlx.DB
 	context.Context
+	options *Options
+	dialect Dialect
 }
 
 func (m *MySQLProvider) NewSQLBuilder() SQLBuilder {
@@ -74,7 +76,7 @@ func (m *MySQLProvider) ResetDatabase() error {
 }
 
 // NewMySQLProvider creates a new MySQL provider instance
-func NewMySQLProvider(options *Options) (*MySQLProvider, error) {
+func NewMySQLProvider(options *Options) (Provider, error) {
 	driverName = options.Driver
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
 		options.Username, options.Password, options.Host, options.Port, options.Name)
@@ -98,5 +100,7 @@ func NewMySQLProvider(options *Options) (*MySQLProvider, error) {
 	return &MySQLProvider{
 		dbHandle: dbHandle,
 		Context:  options.Context,
+		options:  options,
+		dialect:  NewDialect(options),
 	}, nil
 }

@@ -1,34 +1,15 @@
-// Package query SQLBuilder with adaptations based on SQL and DML/DDL best practices from educational sources and database dialect specifics
+// Package dataprovider Package query SQLBuilder with adaptations based on SQL and DML/DDL best practices from educational sources and database dialect specifics
 package dataprovider
 
 import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 
 	"gopkg.in/yaml.v3"
-)
-
-const (
-	joinTemplate        = "JOIN %s ON %s"
-	leftJoinTemplate    = "LEFT JOIN %s ON %s"
-	rightJoinTemplate   = "RIGHT JOIN %s ON %s"
-	whereTemplate       = " WHERE %s"
-	groupByTemplate     = "GROUP BY %s"
-	orderByTemplate     = "ORDER BY %s"
-	limitTemplate       = "LIMIT %d"
-	offsetTemplate      = "OFFSET %d"
-	havingTemplate      = "HAVING %s"
-	selectTemplate      = "SELECT %s FROM %s"
-	createTableTemplate = "CREATE TABLE %s (%s)"
-	dropTableTemplate   = "DROP TABLE %s"
-	deleteTemplate      = "DELETE FROM %s"
-	insertTemplate      = "INSERT INTO %s (%s) VALUES (%s)"
-	updateTemplate      = "UPDATE %s SET %s"
-	updateSetTemplate   = "UPDATE %s SET %s"
-	andTemplate         = "(%s) AND (%s)"
 )
 
 type stringKinds string
@@ -41,6 +22,204 @@ const (
 	stringKindCreate stringKinds = "create"
 	stringKindDrop   stringKinds = "drop"
 )
+
+const (
+	joinTemplate              = "JOIN %s ON %s"
+	leftJoinTemplate          = "LEFT JOIN %s ON %s"
+	rightJoinTemplate         = "RIGHT JOIN %s ON %s"
+	whereTemplate             = " WHERE %s"
+	groupByTemplate           = "GROUP BY %s"
+	orderByTemplate           = "ORDER BY %s"
+	limitTemplate             = "LIMIT %d"
+	offsetTemplate            = "OFFSET %d"
+	havingTemplate            = "HAVING %s"
+	selectTemplate            = "SELECT %s FROM %s"
+	createTableTemplate       = "CREATE TABLE %s (%s)"
+	dropTableTemplate         = "DROP TABLE %s"
+	ifExistsDropTableTemplate = "DROP TABLE IF EXISTS %s"
+	deleteTemplate            = "DELETE FROM %s"
+	insertTemplate            = "INSERT INTO %s (%s) VALUES (%s)"
+	updateTemplate            = "UPDATE %s SET %s"
+	updateSetTemplate         = "UPDATE %s SET %s"
+	andTemplate               = "(%s) AND (%s)"
+)
+
+type ColumnBuilder struct {
+	tb       *TableBuilder
+	colIndex int
+}
+
+func (c *ColumnBuilder) setGoType(goType string) *ColumnBuilder {
+	col := &c.tb.Columns[c.colIndex]
+	col.Type = c.tb.Dialect.TypeMap(goType)
+	return c
+}
+
+func (c *ColumnBuilder) Int() *ColumnBuilder {
+	return c.setGoType("int")
+}
+
+func (c *ColumnBuilder) Float64() *ColumnBuilder {
+	return c.setGoType("float64")
+}
+
+func (c *ColumnBuilder) String() *ColumnBuilder {
+	return c.setGoType("string")
+}
+
+func (c *ColumnBuilder) Bool() *ColumnBuilder {
+	return c.setGoType("bool")
+}
+
+func (c *ColumnBuilder) Timestamp() *ColumnBuilder {
+	return c.setGoType("time.Time")
+}
+
+func (c *ColumnBuilder) NotNull() *ColumnBuilder {
+	c.tb.Columns[c.colIndex].NotNull = true
+	return c
+}
+
+func (c *ColumnBuilder) PrimaryKey() *ColumnBuilder {
+	c.tb.Columns[c.colIndex].PrimaryKey = true
+	return c
+}
+
+func (c *ColumnBuilder) Default(value string) *ColumnBuilder {
+	c.tb.Columns[c.colIndex].DefaultValue = value
+	return c
+}
+
+func (c *ColumnBuilder) Unique() *ColumnBuilder {
+	c.tb.Columns[c.colIndex].Unique = true
+	return c
+}
+
+func (c *ColumnBuilder) ForeignKey(refTable, refColumn, onDelete, onUpdate string) *ColumnBuilder {
+	c.tb.Columns[c.colIndex].ForeignKey = &ForeignKey{
+		Column:    c.tb.Columns[c.colIndex].Name,
+		RefTable:  refTable,
+		RefColumn: refColumn,
+		OnDelete:  onDelete,
+		OnUpdate:  onUpdate,
+	}
+	return c
+}
+
+func (c *ColumnBuilder) Index() *ColumnBuilder {
+	col := c.tb.Columns[c.colIndex]
+	idxName := fmt.Sprintf("idx_%s_%s", strings.ToLower(c.tb.Name), strings.ToLower(col.Name))
+	c.tb.Indexes = append(c.tb.Indexes, Index{
+		Name:   idxName,
+		Column: col.Name,
+	})
+	c.tb.Columns[c.colIndex].HasIndex = true
+	return c
+}
+
+type ForeignKey struct {
+	Column    string
+	RefTable  string
+	RefColumn string
+	OnDelete  string
+	OnUpdate  string
+}
+
+type Index struct {
+	Name   string
+	Column string
+}
+
+type TableBuilder struct {
+	Name    string
+	Columns []Column
+	Indexes []Index
+	Dialect
+}
+
+func (b *TableBuilder) CreateTable(name string) *TableBuilder {
+	b.Name = name
+	return b
+}
+
+func (b *TableBuilder) Column(name string) *ColumnBuilder {
+	b.Columns = append(b.Columns, Column{Name: name})
+	return &ColumnBuilder{tb: b, colIndex: len(b.Columns) - 1}
+}
+
+func (b *TableBuilder) NotNull() *TableBuilder {
+	b.Columns[len(b.Columns)-1].NotNull = true
+	return b
+}
+
+func (b *TableBuilder) PrimaryKey() *TableBuilder {
+	b.Columns[len(b.Columns)-1].PrimaryKey = true
+	return b
+}
+
+func (b *TableBuilder) ForeignKey(refTable, refColumn string) *TableBuilder {
+	col := &b.Columns[len(b.Columns)-1]
+	col.ForeignKey = &ForeignKey{
+		Column:    col.Name,
+		RefTable:  refTable,
+		RefColumn: refColumn,
+	}
+	return b
+}
+
+func (b *TableBuilder) Index(unique bool) *TableBuilder {
+	col := b.Columns[len(b.Columns)-1]
+	idxName := fmt.Sprintf("idx_%s_%s", strings.ToLower(b.Name), strings.ToLower(col.Name))
+	b.Indexes = append(b.Indexes, Index{
+		Name:   idxName,
+		Column: col.Name,
+	})
+	b.Columns[len(b.Columns)-1].HasIndex = true
+	b.Columns[len(b.Columns)-1].UniqueIndex = unique
+	return b
+}
+
+func (b *TableBuilder) Build() string {
+	var lines []string
+	for _, c := range b.Columns {
+		col := fmt.Sprintf("%s %s", b.Dialect.QuoteIdentifier(c.Name), b.Dialect.TypeMap(c.Type))
+		if c.PrimaryKey {
+			col += " " + b.Dialect.PrimaryKeySyntax()
+		}
+		if c.NotNull {
+			col += " NOT NULL"
+		}
+		lines = append(lines, col)
+	}
+
+	for _, c := range b.Columns {
+		if c.ForeignKey != nil {
+			lines = append(lines, fmt.Sprintf("FOREIGN KEY (%s) REFERENCES %s(%s)",
+				b.Dialect.QuoteIdentifier(c.Name),
+				b.Dialect.QuoteIdentifier(c.ForeignKey.RefTable),
+				b.Dialect.QuoteIdentifier(c.ForeignKey.RefColumn)))
+		}
+	}
+
+	createStmt := fmt.Sprintf("CREATE TABLE %s (\n  %s\n);",
+		b.Dialect.QuoteIdentifier(b.Name),
+		strings.Join(lines, ",\n  "))
+
+	var indexStmts []string
+	for _, idx := range b.Indexes {
+		indexStmts = append(indexStmts, fmt.Sprintf("CREATE INDEX %s ON %s(%s);",
+			b.Dialect.QuoteIdentifier(idx.Name),
+			b.Dialect.QuoteIdentifier(b.Name),
+			b.Dialect.QuoteIdentifier(idx.Column)))
+	}
+
+	return createStmt + "\n" + strings.Join(indexStmts, "\n")
+}
+
+func (b *TableBuilder) ToFile(path string) error {
+	sql := b.Build()
+	return os.WriteFile(path, []byte(sql), 0644)
+}
 
 // SQLBuilder interface models typical SQL DDL and DML operations for various dialects
 type SQLBuilder interface {
@@ -55,7 +234,7 @@ type SQLBuilder interface {
 	OrderBy(columns ...string) SQLBuilder
 	Limit(n int) SQLBuilder
 	Offset(n int) SQLBuilder
-	CreateTable(table string, definition string) SQLBuilder
+	CreateTable(table string) SQLBuilder
 	DropTable(table string) SQLBuilder
 	DeleteFrom(table string) SQLBuilder
 	InsertInto(table string, columns ...string) SQLBuilder
@@ -71,17 +250,36 @@ type SQLBuilder interface {
 	WhenMatched(updateSet map[string]any) SQLBuilder
 	WhenNotMatchedInsert(columns []string, values []any) SQLBuilder
 	Union(other SQLBuilder) SQLBuilder
-	ExportAsJSON() (string, error)
+	ExportAsJSON(pretty bool) (string, error)
 	ExportAsXML() (string, error)
 	ExportAsYAML() (string, error)
 	StructToSQL(data any, table string, isInsert bool) (string, []any, error)
+	IfNotExists() SQLBuilder
+	IfExists() SQLBuilder
+	ExportStructuredQuery() StructuredQuery
+	ImportStructuredQuery(s StructuredQuery) SQLBuilder
+	Columns(columns ...Column) SQLBuilder
+	Column(name string, colType string, opts ...func(*Column)) SQLBuilder
+}
+
+type Column struct {
+	Name         string
+	Type         string
+	NotNull      bool
+	PrimaryKey   bool
+	ForeignKey   *ForeignKey
+	HasIndex     bool
+	UniqueIndex  bool
+	DefaultValue any
+	Unique       bool
 }
 
 type queryBuilder struct {
 	opts            *Options
 	kind            stringKinds
 	table           string
-	columns         []string
+	selectCols      []string
+	columns         []Column
 	joins           []string
 	where           []string
 	groupBy         []string
@@ -102,6 +300,8 @@ type queryBuilder struct {
 	offset          *int
 	special         string
 	formatter       PlaceholderFormatter
+	ifNotExists     bool
+	ifExists        bool
 }
 
 func NewQueryBuilder(opts *Options) SQLBuilder {
@@ -185,14 +385,18 @@ func (b *queryBuilder) Set(column string, value any) SQLBuilder {
 	return b
 }
 
-func (b *queryBuilder) CreateTable(table string, definition string) SQLBuilder {
+func (b *queryBuilder) CreateTable(table string) SQLBuilder {
 	b.kind = stringKindCreate
-	b.special = fmt.Sprintf(createTableTemplate, table, definition)
+	b.table = table
 	return b
 }
 
 func (b *queryBuilder) DropTable(table string) SQLBuilder {
 	b.kind = stringKindDrop
+	if b.ifExists {
+		b.special = fmt.Sprintf(ifExistsDropTableTemplate, table)
+		return b
+	}
 	b.special = fmt.Sprintf(dropTableTemplate, table)
 	return b
 }
@@ -206,7 +410,7 @@ func (b *queryBuilder) DeleteFrom(table string) SQLBuilder {
 func (b *queryBuilder) Select(table string, columns ...string) SQLBuilder {
 	b.kind = stringKindSelect
 	b.table = table
-	b.columns = columns
+	b.selectCols = columns
 	return b
 }
 
@@ -282,7 +486,7 @@ func (b *queryBuilder) Clear() SQLBuilder {
 type StructuredQuery struct {
 	XMLName         xml.Name          `json:"-" xml:"query"`
 	Kind            stringKinds       `json:"kind" xml:"kind"`
-	Columns         []string          `json:"columns,omitempty" xml:"columns"`
+	Columns         []Column          `json:"columns,omitempty" xml:"columns"`
 	From            string            `json:"from,omitempty" xml:"from"`
 	Where           string            `json:"where,omitempty" xml:"where"`
 	GroupBy         []string          `json:"groupBy,omitempty" xml:"groupBy"`
@@ -368,9 +572,15 @@ func (b *queryBuilder) ImportStructuredQuery(s StructuredQuery) SQLBuilder {
 }
 
 // ExportAsJSON converts the builder's current query state to a JSON object
-func (b *queryBuilder) ExportAsJSON() (string, error) {
+func (b *queryBuilder) ExportAsJSON(pretty bool) (string, error) {
 	sq := b.ExportStructuredQuery()
-	out, err := json.Marshal(sq)
+	var out []byte
+	var err error
+	if pretty {
+		out, err = json.MarshalIndent(sq, "", "  ")
+	} else {
+		out, err = json.Marshal(sq)
+	}
 	if err != nil {
 		return "", err
 	}
@@ -475,104 +685,132 @@ func (b *queryBuilder) StructToSQLWithPK(data any, table string, isInsert bool) 
 	return query, append(values, data.(map[string]any)[pk]), nil
 }
 
+func (b *queryBuilder) Column(name string, colType string, opts ...func(*Column)) SQLBuilder {
+	col := Column{Name: name, Type: colType}
+	for _, opt := range opts {
+		opt(&col)
+	}
+	b.columns = append(b.columns, col)
+	return b
+}
+
+func (b *queryBuilder) Columns(cols ...Column) SQLBuilder {
+	b.columns = append(b.columns, cols...)
+	return b
+}
+
+func (b *queryBuilder) IfNotExists() SQLBuilder {
+	b.ifNotExists = true
+	return b
+}
+
+func (b *queryBuilder) IfExists() SQLBuilder {
+	b.ifExists = true
+	return b
+}
+
 // Build builds the query and returns the query string and a slice of arguments
 func (b *queryBuilder) Build() (string, []any) {
-	if b.mergeTable != "" {
-		var sb strings.Builder
-		sb.WriteString(fmt.Sprintf("MERGE INTO %s", b.mergeTable))
-		if b.mergeOn != "" {
-			sb.WriteString(fmt.Sprintf(" ON %s", b.mergeOn))
-		}
-		if len(b.mergeMatchedSet) > 0 {
-			sb.WriteString(" WHEN MATCHED THEN UPDATE SET ")
-			sb.WriteString(strings.Join(b.mergeMatchedSet, ", "))
-		}
-		if len(b.mergeInsertCols) > 0 && len(b.mergeInsertVals) > 0 {
-			sb.WriteString(" WHEN NOT MATCHED THEN INSERT (")
-			sb.WriteString(strings.Join(b.mergeInsertCols, ", "))
-			sb.WriteString(") VALUES (")
-			sb.WriteString(strings.Join(b.mergeInsertVals, ", "))
-			sb.WriteString(")")
-		}
-		return b.formatter.ReplacePlaceholders(sb.String()), b.args
-	}
+	var sb strings.Builder
 
-	if len(b.rawClauses) > 0 {
-		return b.formatter.ReplacePlaceholders(strings.Join(b.rawClauses, " ")), b.args
-	}
+	switch b.kind {
+	case stringKindSelect:
+		sb.WriteString("SELECT ")
+		if len(b.selectCols) > 0 {
+			sb.WriteString(strings.Join(b.selectCols, ", "))
+		} else {
+			sb.WriteString("*")
+		}
+		sb.WriteString(" FROM " + b.table)
 
-	if b.special != "" && strings.HasPrefix(b.special, "DELETE FROM") {
-		query := b.special
+		if len(b.joins) > 0 {
+			sb.WriteString(" " + strings.Join(b.joins, " "))
+		}
 		if len(b.where) > 0 {
-			query += fmt.Sprintf(whereTemplate, strings.Join(b.where, " AND "))
+			sb.WriteString(" WHERE " + strings.Join(b.where, " AND "))
 		}
-		return b.formatter.ReplacePlaceholders(query), b.args
-	}
+		if len(b.groupBy) > 0 {
+			sb.WriteString(" GROUP BY " + strings.Join(b.groupBy, ", "))
+		}
+		if len(b.having) > 0 {
+			sb.WriteString(" HAVING " + strings.Join(b.having, " AND "))
+		}
+		if len(b.orderBy) > 0 {
+			sb.WriteString(" ORDER BY " + strings.Join(b.orderBy, ", "))
+		}
+		if b.limit != nil {
+			sb.WriteString(fmt.Sprintf(" LIMIT %d", *b.limit))
+		}
+		if b.offset != nil {
+			sb.WriteString(fmt.Sprintf(" OFFSET %d", *b.offset))
+		}
+		return sb.String(), b.args
 
-	if b.special != "" {
-		return b.special, b.args
-	}
+	case stringKindCreate:
+		var parts []string
+		for _, col := range b.columns {
+			def := fmt.Sprintf("%s %s", b.formatter.QuoteIdentifier(col.Name), col.Type)
+			if col.PrimaryKey {
+				def += " PRIMARY KEY"
+			}
+			if col.NotNull {
+				def += " NOT NULL"
+			}
+			parts = append(parts, def)
+		}
+		stmt := "CREATE TABLE"
+		if b.ifNotExists {
+			stmt += " IF NOT EXISTS"
+		}
+		stmt += fmt.Sprintf(" %s (%s)", b.table, strings.Join(parts, ", "))
+		return stmt, nil
 
-	if len(b.insertCols) > 0 && len(b.insertVals) > 0 {
-		query := fmt.Sprintf(insertTemplate,
+	case stringKindInsert:
+		query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
 			b.table,
 			strings.Join(b.insertCols, ", "),
 			strings.Join(b.insertVals, ", "))
-		return b.formatter.ReplacePlaceholders(query), b.args
-	}
+		return query, b.args
 
-	if len(b.updateSet) > 0 {
-		query := fmt.Sprintf(updateTemplate, b.table, strings.Join(b.updateSet, ", "))
+	case stringKindUpdate:
+		query := fmt.Sprintf("UPDATE %s SET %s", b.table, strings.Join(b.updateSet, ", "))
 		if len(b.where) > 0 {
-			query += fmt.Sprintf(whereTemplate, strings.Join(b.where, " AND "))
+			query += fmt.Sprintf(" WHERE %s", strings.Join(b.where, " AND "))
 		}
-		return b.formatter.ReplacePlaceholders(query), b.args
+		return query, b.args
+
+	case stringKindDelete:
+		query := fmt.Sprintf("DELETE FROM %s", b.table)
+		if len(b.where) > 0 {
+			query += fmt.Sprintf(" WHERE %s", strings.Join(b.where, " AND "))
+		}
+		return query, b.args
+
+	case stringKindDrop:
+		query := "DROP TABLE"
+		if b.ifExists {
+			query += " IF EXISTS"
+		}
+		query += " " + b.table
+		return query, nil
+
+	default:
+		return "", nil
 	}
+}
 
-	var sb strings.Builder
+func NotNull() func(*Column) {
+	return func(c *Column) { c.NotNull = true }
+}
 
-	columns := "*"
-	if len(b.columns) > 0 {
-		columns = strings.Join(b.columns, ", ")
-	}
+func PrimaryKey() func(*Column) {
+	return func(c *Column) { c.PrimaryKey = true }
+}
 
-	sb.WriteString(fmt.Sprintf(selectTemplate, columns, b.table))
+func Unique() func(*Column) {
+	return func(c *Column) { c.Unique = true }
+}
 
-	if b.alias != "" {
-		sb.WriteString(fmt.Sprintf(" AS %s", b.alias))
-	}
-
-	if len(b.joins) > 0 {
-		sb.WriteString(" ")
-		sb.WriteString(strings.Join(b.joins, " "))
-	}
-
-	if len(b.where) > 0 {
-		sb.WriteString(fmt.Sprintf(whereTemplate, strings.Join(b.where, " AND ")))
-	}
-
-	if len(b.groupBy) > 0 {
-		sb.WriteString(" ")
-		sb.WriteString(fmt.Sprintf(groupByTemplate, strings.Join(b.groupBy, ", ")))
-	}
-
-	if len(b.having) > 0 {
-		sb.WriteString(" ")
-		sb.WriteString(fmt.Sprintf(havingTemplate, strings.Join(b.having, " AND ")))
-	}
-
-	if len(b.orderBy) > 0 {
-		sb.WriteString(" ")
-		sb.WriteString(fmt.Sprintf(orderByTemplate, strings.Join(b.orderBy, ", ")))
-	}
-
-	if b.limit != nil {
-		sb.WriteString(fmt.Sprintf(" %s", fmt.Sprintf(limitTemplate, *b.limit)))
-	}
-
-	if b.offset != nil {
-		sb.WriteString(fmt.Sprintf(" %s", fmt.Sprintf(offsetTemplate, *b.offset)))
-	}
-
-	return b.formatter.ReplacePlaceholders(sb.String()), b.args
+func Default(val any) func(*Column) {
+	return func(c *Column) { c.DefaultValue = val }
 }

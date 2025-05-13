@@ -34,7 +34,7 @@ func (f *defaultFormatter) ReplacePlaceholders(query string) string {
 	return query
 }
 
-func NewFormatter(driver string) PlaceholderFormatter {
+func NewFormatter(driver databaseKind) PlaceholderFormatter {
 	switch driver {
 	case PostgresSQLDatabaseProviderName:
 		return &postgresFormatter{}

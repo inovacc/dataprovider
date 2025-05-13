@@ -12,9 +12,10 @@ type SQLiteProvider struct {
 	dbHandle *sqlx.DB
 	context.Context
 	options *Options
+	dialect Dialect
 }
 
-func (s *SQLiteProvider) SqlBuilder() SQLBuilder {
+func (s *SQLiteProvider) QueryBuilder() SQLBuilder {
 	return NewQueryBuilder(s.options)
 }
 
@@ -69,7 +70,7 @@ func (s *SQLiteProvider) InitializeDatabase(schema string) error {
 }
 
 // RevertDatabase reverts the database to the specified version
-func (s *SQLiteProvider) RevertDatabase(targetVersion int) error {
+func (s *SQLiteProvider) RevertDatabase(_ int) error {
 	// TODO implement me
 	panic("implement me")
 }
@@ -81,7 +82,7 @@ func (s *SQLiteProvider) ResetDatabase() error {
 }
 
 // NewSQLiteProvider creates a new SQLite provider instance
-func NewSQLiteProvider(options *Options) (*SQLiteProvider, error) {
+func NewSQLiteProvider(options *Options) (Provider, error) {
 	driverName = options.Driver
 	dbHandle, err := sqlx.Connect("sqlite", options.ConnectionString)
 	if err != nil {
@@ -98,5 +99,6 @@ func NewSQLiteProvider(options *Options) (*SQLiteProvider, error) {
 		dbHandle: dbHandle,
 		Context:  options.Context,
 		options:  options,
+		dialect:  NewDialect(options),
 	}, nil
 }

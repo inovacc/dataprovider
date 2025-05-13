@@ -14,6 +14,7 @@ import (
 type ORASQLProvider struct {
 	dbHandle *sqlx.DB
 	context.Context
+	dialect Dialect
 }
 
 func (o *ORASQLProvider) NewSQLBuilder() SQLBuilder {
@@ -75,7 +76,7 @@ func (o *ORASQLProvider) GetProviderStatus() Status {
 }
 
 // NewOracleProvider creates a new Oracle provider instance
-func NewOracleProvider(options *Options) (*ORASQLProvider, error) {
+func NewOracleProvider(options *Options) (Provider, error) {
 	driverName = options.Driver
 	dataSourceName := fmt.Sprintf("%s/%s@%s:%d/%s",
 		options.Username, options.Password, options.Host, options.Port, options.Name)
@@ -96,5 +97,6 @@ func NewOracleProvider(options *Options) (*ORASQLProvider, error) {
 		dbHandle: dbHandle,
 		Context:  options.Context,
 		options:  options,
+		dialect:  NewDialect(options),
 	}, nil
 }
