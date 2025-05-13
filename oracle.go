@@ -1,27 +1,26 @@
 //go:build oracle
 
-package provider
+package dataprovider
 
 import (
 	"context"
 	"fmt"
 
 	_ "github.com/godror/godror"
-	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 )
 
-// ORASQLProvider defines the auth provider for Oracle database
+// ORASQLProvider defines the auth provider for an Oracle database
 type ORASQLProvider struct {
 	dbHandle *sqlx.DB
 	context.Context
 }
 
-func (o *ORASQLProvider) NewSQLBuilder() *SQLBuilder {
-	return NewSQLBuilder(o.GetProviderStatus().Driver)
+func (o *ORASQLProvider) NewSQLBuilder() SQLBuilder {
+	return NewQueryBuilder(o.options)
 }
 
-func (o *ORASQLProvider) MigrateDatabase() migration.Migration {
+func (o *ORASQLProvider) MigrateDatabase() Migration {
 	// TODO implement me
 	panic("implement me")
 }
@@ -96,5 +95,6 @@ func NewOracleProvider(options *Options) (*ORASQLProvider, error) {
 	return &ORASQLProvider{
 		dbHandle: dbHandle,
 		Context:  options.Context,
+		options:  options,
 	}, nil
 }

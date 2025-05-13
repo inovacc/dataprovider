@@ -1,13 +1,12 @@
 //go:build mysql
 
-package provider
+package dataprovider
 
 import (
 	"context"
 	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -17,8 +16,8 @@ type MySQLProvider struct {
 	context.Context
 }
 
-func (m *MySQLProvider) NewSQLBuilder() *SQLBuilder {
-	return NewSQLBuilder(m.GetProviderStatus().Driver)
+func (m *MySQLProvider) NewSQLBuilder() SQLBuilder {
+	return NewQueryBuilder(m.options)
 }
 
 func (m *MySQLProvider) GetProviderStatus() Status {
@@ -35,7 +34,7 @@ func (m *MySQLProvider) GetProviderStatus() Status {
 	return status
 }
 
-func (m *MySQLProvider) MigrateDatabase() migration.Migration {
+func (m *MySQLProvider) MigrateDatabase() Migration {
 	// TODO implement me
 	panic("implement me")
 }

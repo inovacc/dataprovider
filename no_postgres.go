@@ -1,18 +1,18 @@
 //go:build !postgres
 
-package provider
+package dataprovider
 
 import (
-	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 )
 
 // PGSQLProvider defines the auth provider for PostgresSQL database
-type PGSQLProvider struct{}
+type PGSQLProvider struct {
+	options *Options
+}
 
-func (p *PGSQLProvider) SqlBuilder() *SQLBuilder {
-	// TODO implement me
-	panic("implement me")
+func (p *PGSQLProvider) SqlBuilder() SQLBuilder {
+	return NewQueryBuilder(p.options)
 }
 
 func (p *PGSQLProvider) Disconnect() error {
@@ -40,7 +40,7 @@ func (p *PGSQLProvider) InitializeDatabase(schema string) error {
 	panic("implement me")
 }
 
-func (p *PGSQLProvider) MigrateDatabase() migration.Migration {
+func (p *PGSQLProvider) MigrateDatabase() Migration {
 	// TODO implement me
 	panic("implement me")
 }

@@ -1,12 +1,11 @@
 //go:build postgres
 
-package provider
+package dataprovider
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -17,8 +16,8 @@ type PGSQLProvider struct {
 	context.Context
 }
 
-func (p *PGSQLProvider) NewSQLBuilder() *SQLBuilder {
-	return NewSQLBuilder(p.GetProviderStatus().Driver)
+func (p *PGSQLProvider) NewSQLBuilder() SQLBuilder {
+	return NewQueryBuilder(p.options)
 }
 
 func (p *PGSQLProvider) GetProviderStatus() Status {
@@ -35,7 +34,7 @@ func (p *PGSQLProvider) GetProviderStatus() Status {
 	return status
 }
 
-func (p *PGSQLProvider) MigrateDatabase() migration.Migration {
+func (p *PGSQLProvider) MigrateDatabase() Migration {
 	// TODO implement me
 	panic("implement me")
 }
@@ -99,5 +98,6 @@ func NewPostgresSQLProvider(options *Options) (*PGSQLProvider, error) {
 	return &PGSQLProvider{
 		dbHandle: dbHandle,
 		Context:  options.Context,
+		options:  options,
 	}, nil
 }

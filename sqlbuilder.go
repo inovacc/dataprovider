@@ -1,5 +1,5 @@
 // Package query SQLBuilder with adaptations based on SQL and DML/DDL best practices from educational sources and database dialect specifics
-package query
+package dataprovider
 
 import (
 	"encoding/json"
@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/inovacc/dataprovider/internal/provider"
 	"gopkg.in/yaml.v3"
 )
 
@@ -79,7 +78,7 @@ type SQLBuilder interface {
 }
 
 type queryBuilder struct {
-	opts            provider.Options
+	opts            *Options
 	kind            stringKinds
 	table           string
 	columns         []string
@@ -105,7 +104,7 @@ type queryBuilder struct {
 	formatter       PlaceholderFormatter
 }
 
-func NewQueryBuilder(opts provider.Options) SQLBuilder {
+func NewQueryBuilder(opts *Options) SQLBuilder {
 	return &queryBuilder{
 		opts:      opts,
 		formatter: NewFormatter(opts.Driver),

@@ -1,18 +1,18 @@
 //go:build !mysql
 
-package provider
+package dataprovider
 
 import (
-	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 )
 
 // MySQLProvider defines the auth provider for MySQL/MariaDB database
-type MySQLProvider struct{}
+type MySQLProvider struct {
+	options *Options
+}
 
-func (m *MySQLProvider) SqlBuilder() *SQLBuilder {
-	// TODO implement me
-	panic("implement me")
+func (m *MySQLProvider) SqlBuilder() SQLBuilder {
+	return NewQueryBuilder(m.options)
 }
 
 func (m *MySQLProvider) Disconnect() error {
@@ -40,7 +40,7 @@ func (m *MySQLProvider) InitializeDatabase(schema string) error {
 	panic("implement me")
 }
 
-func (m *MySQLProvider) MigrateDatabase() migration.Migration {
+func (m *MySQLProvider) MigrateDatabase() Migration {
 	// TODO implement me
 	panic("implement me")
 }

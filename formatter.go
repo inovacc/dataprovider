@@ -1,10 +1,8 @@
-package query
+package dataprovider
 
 import (
 	"fmt"
 	"strings"
-
-	"github.com/inovacc/dataprovider/internal/provider"
 )
 
 // PlaceholderFormatter is dialect-aware: PostgresSQL uses $1, Oracle uses: p1, default uses?
@@ -38,9 +36,9 @@ func (f *defaultFormatter) ReplacePlaceholders(query string) string {
 
 func NewFormatter(driver string) PlaceholderFormatter {
 	switch driver {
-	case provider.PostgresSQLDatabaseProviderName:
+	case PostgresSQLDatabaseProviderName:
 		return &postgresFormatter{}
-	case provider.OracleDatabaseProviderName:
+	case OracleDatabaseProviderName:
 		return &oracleFormatter{}
 	default:
 		return &defaultFormatter{}

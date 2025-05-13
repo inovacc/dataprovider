@@ -4,31 +4,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/inovacc/dataprovider/internal/migration"
-	"github.com/inovacc/dataprovider/internal/provider"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/afero"
 )
-
-const (
-	// OracleDatabaseProviderName defines the name for Oracle database Provider
-	OracleDatabaseProviderName = provider.OracleDatabaseProviderName
-
-	// SQLiteDataProviderName defines the name for SQLite database Provider
-	SQLiteDataProviderName = provider.SQLiteDataProviderName
-
-	// MySQLDatabaseProviderName defines the name for MySQL database Provider
-	MySQLDatabaseProviderName = provider.MySQLDatabaseProviderName
-
-	// PostgresSQLDatabaseProviderName defines the name for PostgresSQL database Provider
-	PostgresSQLDatabaseProviderName = provider.PostgresSQLDatabaseProviderName
-
-	// MemoryDataProviderName defines the name for a memory provider using SQLite in-memory database Provider
-	MemoryDataProviderName = provider.MemoryDataProviderName
-)
-
-type Status = provider.Status
-type Options = provider.Options
 
 type Provider interface {
 	// Disconnect disconnects from the data provider
@@ -47,7 +25,7 @@ type Provider interface {
 	InitializeDatabase(schema string) error
 
 	// MigrateDatabase migrates the database to the latest version
-	MigrateDatabase() migration.Migration
+	MigrateDatabase() Migration
 
 	// RevertDatabase reverts the database to the specified version
 	RevertDatabase(targetVersion int) error
@@ -58,28 +36,28 @@ type Provider interface {
 	// GetProviderStatus returns the status of the provider
 	GetProviderStatus() Status
 
-	SqlBuilder() *provider.SQLBuilder
+	SqlBuilder() SQLBuilder
 }
 
 // NewDataProvider creates a new data provider instance
 func NewDataProvider(options *Options) (Provider, error) {
 	switch options.Driver {
 	case OracleDatabaseProviderName:
-		return provider.NewOracleProvider(options)
+		return NewOracleProvider(options)
 	case SQLiteDataProviderName:
-		return provider.NewSQLiteProvider(options)
+		return NewSQLiteProvider(options)
 	case MySQLDatabaseProviderName:
-		return provider.NewMySQLProvider(options)
+		return NewMySQLProvider(options)
 	case PostgresSQLDatabaseProviderName:
-		return provider.NewPostgreSQLProvider(options)
+		return NewPostgreSQLProvider(options)
 	case MemoryDataProviderName:
-		return provider.NewMemoryProvider(options)
+		return NewMemoryProvider(options)
 	}
 
 	return nil, fmt.Errorf("unsupported driver %s", options.Driver)
 }
 
-// Must panics if the error is not nil
+// Must launch panic if the error is not nil
 //
 // Otherwise, it returns the provider instance with the corresponding implementation
 func Must(provider Provider, err error) Provider {

@@ -7,7 +7,7 @@ import (
 func TestQuery(t *testing.T) {
 	provider := Must(NewDataProvider(NewOptions(WithMemoryDB())))
 
-	query := provider.SqlBuilder().
+	query := SqlBuilder().
 		Table("users").
 		Select("id", "name", "email").
 		Where("age > 18").
@@ -27,7 +27,7 @@ func TestQuery(t *testing.T) {
 func TestQuerySchema(t *testing.T) {
 	provider := Must(NewDataProvider(NewOptions(WithMemoryDB())))
 
-	query := provider.SqlBuilder().
+	query := SqlBuilder().
 		Schema("public").
 		Table("users").
 		Select("id", "name", "email").
@@ -48,16 +48,16 @@ func TestQuerySchema(t *testing.T) {
 func TestQueryCreate(t *testing.T) {
 	provider := Must(NewDataProvider(NewOptions(WithMemoryDB())))
 
-	query := provider.SqlBuilder().
+	query := SqlBuilder().
 		CreateTable("users").
 		IfNotExists().
 		Columns(
-			provider.SqlBuilder().Column("id").Type("SERIAL").PrimaryKey(),
-			provider.SqlBuilder().Column("first_name").Type("TEXT"),
-			provider.SqlBuilder().Column("last_name").Type("TEXT"),
-			provider.SqlBuilder().Column("email").Type("TEXT"),
-			provider.SqlBuilder().Column("ip_address").Type("TEXT"),
-			provider.SqlBuilder().Column("city").Type("TEXT"),
+			SqlBuilder().Column("id").Type("SERIAL").PrimaryKey(),
+			SqlBuilder().Column("first_name").Type("TEXT"),
+			SqlBuilder().Column("last_name").Type("TEXT"),
+			SqlBuilder().Column("email").Type("TEXT"),
+			SqlBuilder().Column("ip_address").Type("TEXT"),
+			SqlBuilder().Column("city").Type("TEXT"),
 		).
 		Build()
 
@@ -72,7 +72,7 @@ func TestQueryCreate(t *testing.T) {
 func TestQueryUpdate(t *testing.T) {
 	provider := Must(NewDataProvider(NewOptions(WithMemoryDB())))
 
-	query := provider.SqlBuilder().
+	query := SqlBuilder().
 		Table("users").
 		Update().
 		Set(map[string]any{

@@ -1,9 +1,8 @@
-package provider
+package dataprovider
 
 import (
 	"context"
 
-	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 	_ "modernc.org/sqlite"
 )
@@ -12,10 +11,11 @@ import (
 type SQLiteProvider struct {
 	dbHandle *sqlx.DB
 	context.Context
+	options *Options
 }
 
-func (s *SQLiteProvider) SqlBuilder() *SQLBuilder {
-	return NewSQLBuilder(s.GetProviderStatus().Driver)
+func (s *SQLiteProvider) SqlBuilder() SQLBuilder {
+	return NewQueryBuilder(s.options)
 }
 
 // GetProviderStatus returns the status of the provider
@@ -34,7 +34,7 @@ func (s *SQLiteProvider) GetProviderStatus() Status {
 }
 
 // MigrateDatabase migrates the database to the latest version
-func (s *SQLiteProvider) MigrateDatabase() migration.Migration {
+func (s *SQLiteProvider) MigrateDatabase() Migration {
 	// TODO implement me
 	panic("implement me")
 }
@@ -97,5 +97,6 @@ func NewSQLiteProvider(options *Options) (*SQLiteProvider, error) {
 	return &SQLiteProvider{
 		dbHandle: dbHandle,
 		Context:  options.Context,
+		options:  options,
 	}, nil
 }

@@ -1,18 +1,18 @@
 //go:build !oracle
 
-package provider
+package dataprovider
 
 import (
-	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 )
 
-// ORASQLProvider defines the auth provider for Oracle database
-type ORASQLProvider struct{}
+// ORASQLProvider defines the auth provider for an Oracle database
+type ORASQLProvider struct {
+	options *Options
+}
 
-func (o *ORASQLProvider) SqlBuilder() *SQLBuilder {
-	// TODO implement me
-	panic("implement me")
+func (o *ORASQLProvider) SqlBuilder() SQLBuilder {
+	return NewQueryBuilder(o.options)
 }
 
 func (o *ORASQLProvider) Disconnect() error {
@@ -40,7 +40,7 @@ func (o *ORASQLProvider) InitializeDatabase(schema string) error {
 	panic("implement me")
 }
 
-func (o *ORASQLProvider) MigrateDatabase() migration.Migration {
+func (o *ORASQLProvider) MigrateDatabase() Migration {
 	// TODO implement me
 	panic("implement me")
 }

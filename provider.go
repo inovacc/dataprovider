@@ -1,4 +1,4 @@
-package provider
+package dataprovider
 
 const (
 	// OracleDatabaseProviderName defines the name for Oracle database Provider
@@ -15,6 +15,12 @@ const (
 
 	// MemoryDataProviderName defines the name for a memory provider using SQLite in-memory database Provider
 	MemoryDataProviderName string = "memory"
+
+	// SQLServerDatabaseProviderName defines the name for SQL Server database Provider
+	SQLServerDatabaseProviderName = "sqlserver"
+
+	// MariadbDatabaseProviderName defines the name for MariaDB database Provider
+	MariadbDatabaseProviderName = "mariadb"
 )
 
 var driverName string

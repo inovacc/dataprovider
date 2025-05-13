@@ -78,14 +78,14 @@ func main() {
 
 	// Initialize the database
 	query := "CREATE TABLE IF NOT EXISTS ...;"
-	if err := provider.InitializeDatabase(query); err != nil {
+	if err := InitializeDatabase(query); err != nil {
 		panic(err)
 	}
 
 	// Get the connection and use it as sqlx.DB or sql.DB
-	conn := provider.GetConnection()
+	conn := GetConnection()
 
-	query := provider.NewSQLBuilder(provider).
+	query := NewSQLBuilder(provider).
 		Table("users").
 		Select("id", "name", "email").
 		Where("age > 18").
@@ -129,12 +129,12 @@ func main() {
 
 	// Initialize the database
 	query := "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, first_name TEXT, last_name TEXT, email TEXT, gender TEXT, ip_address TEXT, city TEXT);"
-	if err := provider.InitializeDatabase(query); err != nil {
+	if err := InitializeDatabase(query); err != nil {
 		panic(err)
 	}
 
 	// Get the connection
-	conn := provider.GetConnection()
+	conn := GetConnection()
 
 	// Begin a transaction
 	tx := conn.MustBegin()

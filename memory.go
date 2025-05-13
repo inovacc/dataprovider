@@ -1,21 +1,21 @@
-package provider
+package dataprovider
 
 import (
 	"context"
 
-	"github.com/inovacc/dataprovider/internal/migration"
 	"github.com/jmoiron/sqlx"
 	_ "modernc.org/sqlite"
 )
 
-// MemoryProvider defines the auth provider for in-memory database
+// MemoryProvider defines the auth provider for an in-memory database
 type MemoryProvider struct {
 	dbHandle *sqlx.DB
 	context.Context
+	options *Options
 }
 
-func (m *MemoryProvider) SqlBuilder() *SQLBuilder {
-	return NewSQLBuilder(m.GetProviderStatus().Driver)
+func (m *MemoryProvider) SqlBuilder() SQLBuilder {
+	return NewQueryBuilder(m.options)
 }
 
 // GetProviderStatus returns the status of the provider
@@ -34,7 +34,7 @@ func (m *MemoryProvider) GetProviderStatus() Status {
 }
 
 // MigrateDatabase migrates the database to the latest version
-func (m *MemoryProvider) MigrateDatabase() migration.Migration {
+func (m *MemoryProvider) MigrateDatabase() Migration {
 	// TODO implement me
 	panic("implement me")
 }
@@ -95,5 +95,6 @@ func NewMemoryProvider(options *Options) (*MemoryProvider, error) {
 	return &MemoryProvider{
 		dbHandle: dbHandle,
 		Context:  options.Context,
+		options:  options,
 	}, nil
 }

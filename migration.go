@@ -1,4 +1,4 @@
-package migration
+package dataprovider
 
 type Migration interface {
 	Validate(string) error

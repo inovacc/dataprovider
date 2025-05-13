@@ -1,11 +1,9 @@
-package query
+package dataprovider
 
 import (
 	"fmt"
 	"strings"
 	"testing"
-
-	"github.com/inovacc/dataprovider/internal/provider"
 )
 
 func TestQueryBuilderVariants(t *testing.T) {
@@ -14,19 +12,19 @@ func TestQueryBuilderVariants(t *testing.T) {
 		expectedSQL string
 	}{
 		{
-			driver:      provider.OracleDatabaseProviderName,
+			driver:      OracleDatabaseProviderName,
 			expectedSQL: "SELECT id, name FROM users WHERE status = :p1 ORDER BY name LIMIT 10",
 		},
 		{
-			driver:      provider.PostgresSQLDatabaseProviderName,
+			driver:      PostgresSQLDatabaseProviderName,
 			expectedSQL: "SELECT id, name FROM users WHERE status = $1 ORDER BY name LIMIT 10",
 		},
 		{
-			driver:      provider.MySQLDatabaseProviderName,
+			driver:      MySQLDatabaseProviderName,
 			expectedSQL: "SELECT id, name FROM users WHERE status = ? ORDER BY name LIMIT 10",
 		},
 		{
-			driver:      provider.SQLiteDataProviderName,
+			driver:      SQLiteDataProviderName,
 			expectedSQL: "SELECT id, name FROM users WHERE status = ? ORDER BY name LIMIT 10",
 		},
 		{
@@ -37,8 +35,8 @@ func TestQueryBuilderVariants(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.driver, func(t *testing.T) {
-			opts := provider.Options{Driver: tt.driver}
-			qb := NewQueryBuilder(opts)
+			opt := &Options{Driver: tt.driver}
+			qb := NewQueryBuilder(opt)
 			sql, _ := qb.Select("users", "id", "name").
 				Where("status = ?", "active").
 				OrderBy("name").
@@ -60,7 +58,7 @@ func TestCreateDropDeleteSQL(t *testing.T) {
 		expectedSQLs map[string]string
 	}{
 		{
-			driver:    provider.OracleDatabaseProviderName,
+			driver:    OracleDatabaseProviderName,
 			operation: "create",
 			builderFunc: func(b SQLBuilder) (string, []any) {
 				return b.CreateTable("users", "id INT, name VARCHAR2(50)").Build()
@@ -70,7 +68,7 @@ func TestCreateDropDeleteSQL(t *testing.T) {
 			},
 		},
 		{
-			driver:    provider.PostgresSQLDatabaseProviderName,
+			driver:    PostgresSQLDatabaseProviderName,
 			operation: "drop",
 			builderFunc: func(b SQLBuilder) (string, []any) {
 				return b.DropTable("users").Build()
@@ -80,7 +78,7 @@ func TestCreateDropDeleteSQL(t *testing.T) {
 			},
 		},
 		{
-			driver:    provider.MySQLDatabaseProviderName,
+			driver:    MySQLDatabaseProviderName,
 			operation: "delete",
 			builderFunc: func(b SQLBuilder) (string, []any) {
 				return b.DeleteFrom("users").Where("name = ?", "john").Build()
@@ -90,7 +88,7 @@ func TestCreateDropDeleteSQL(t *testing.T) {
 			},
 		},
 		{
-			driver:    provider.SQLiteDataProviderName,
+			driver:    SQLiteDataProviderName,
 			operation: "delete",
 			builderFunc: func(b SQLBuilder) (string, []any) {
 				return b.DeleteFrom("users").Where("name = ?", "john").Build()
@@ -103,8 +101,8 @@ func TestCreateDropDeleteSQL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%s_%s", tt.operation, tt.driver), func(t *testing.T) {
-			opts := provider.Options{Driver: tt.driver}
-			builder := NewQueryBuilder(opts)
+			opt := &Options{Driver: tt.driver}
+			builder := NewQueryBuilder(opt)
 			sql, _ := tt.builderFunc(builder)
 
 			key := tt.driver
@@ -168,8 +166,8 @@ func TestInsertAndUpdateSQL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%s_%s", tt.opType, tt.driver), func(t *testing.T) {
-			opts := provider.Options{Driver: tt.driver}
-			builder := NewQueryBuilder(opts)
+			opt := &Options{Driver: tt.driver}
+			builder := NewQueryBuilder(opt)
 			sql, _ := tt.builderFunc(builder)
 
 			expected := tt.expectedSQLs[tt.driver]
@@ -186,19 +184,19 @@ func TestMergeBuilder(t *testing.T) {
 		expected string
 	}{
 		{
-			driver:   provider.PostgresSQLDatabaseProviderName,
+			driver:   PostgresSQLDatabaseProviderName,
 			expected: "MERGE INTO users ON id = $1 WHEN MATCHED THEN UPDATE SET email = $2 WHEN NOT MATCHED THEN INSERT (id, email) VALUES ($3, $4)",
 		},
 		{
-			driver:   provider.OracleDatabaseProviderName,
+			driver:   OracleDatabaseProviderName,
 			expected: "MERGE INTO users ON id = :p1 WHEN MATCHED THEN UPDATE SET email = :p2 WHEN NOT MATCHED THEN INSERT (id, email) VALUES (:p3, :p4)",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.driver, func(t *testing.T) {
-			opts := provider.Options{Driver: tt.driver}
-			q := NewQueryBuilder(opts).
+			opt := &Options{Driver: tt.driver}
+			q := NewQueryBuilder(opt).
 				MergeInto("users").
 				On("id = ?").
 				WhenMatched(map[string]any{"email": "updated@example.com"}).
@@ -213,8 +211,8 @@ func TestMergeBuilder(t *testing.T) {
 }
 
 func TestRawSQLInjection(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	q := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opt).
 		Raw("SELECT * FROM users WHERE email = ?", "john@example.com")
 
 	sql, args := q.Build()
@@ -229,8 +227,8 @@ func TestRawSQLInjection(t *testing.T) {
 }
 
 func TestAliasSupport(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	q := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opt).
 		Select("users", "id", "email").
 		As("u")
 
@@ -243,8 +241,8 @@ func TestAliasSupport(t *testing.T) {
 }
 
 func TestGroupByHaving(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	q := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opt).
 		Select("orders", "customer_id", "COUNT(*)").
 		GroupBy("customer_id").
 		Having("COUNT(*) > ?", 5).
@@ -262,8 +260,8 @@ func TestGroupByHaving(t *testing.T) {
 }
 
 func TestJoinClauses(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	q := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opt).
 		Select("orders", "orders.id", "users.email").
 		Join("users", "orders.user_id = users.id").
 		LeftJoin("payments", "orders.id = payments.order_id").
@@ -278,8 +276,8 @@ func TestJoinClauses(t *testing.T) {
 }
 
 func TestJoinGroupByHaving(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	q := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opt).
 		Select("orders", "users.name", "COUNT(orders.id)").
 		Join("users", "orders.user_id = users.id").
 		GroupBy("users.name").
@@ -298,14 +296,14 @@ func TestJoinGroupByHaving(t *testing.T) {
 }
 
 func TestNestedSelect(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	inner := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	inner := NewQueryBuilder(opt).
 		Select("payments", "user_id").
 		Where("status = ?", "completed")
 
 	subSQL, subArgs := inner.Build()
 
-	q := NewQueryBuilder(opts).
+	q := NewQueryBuilder(opt).
 		Select("users", "id", "email").
 		Where(fmt.Sprintf("id IN (%s)", subSQL), subArgs...)
 
@@ -321,12 +319,12 @@ func TestNestedSelect(t *testing.T) {
 }
 
 func TestUnionQueries(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	q1 := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	q1 := NewQueryBuilder(opt).
 		Select("users", "id", "email").
 		Where("role = ?", "admin")
 
-	q2 := NewQueryBuilder(opts).
+	q2 := NewQueryBuilder(opt).
 		Select("users", "id", "email").
 		Where("role = ?", "manager")
 
@@ -344,8 +342,8 @@ func TestUnionQueries(t *testing.T) {
 }
 
 func TestCaseWhenClause(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	q := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opt).
 		Select("orders", "id", "amount", "CASE WHEN amount > 100 THEN 'high' ELSE 'low' END AS category")
 
 	sql, _ := q.Build()
@@ -357,13 +355,13 @@ func TestCaseWhenClause(t *testing.T) {
 }
 
 func TestWithCTE(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	cte := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	cte := NewQueryBuilder(opt).
 		Select("payments", "user_id", "SUM(amount) AS total").
 		GroupBy("user_id")
 
 	cteSQL, cteArgs := cte.Build()
-	main := NewQueryBuilder(opts).
+	main := NewQueryBuilder(opt).
 		Select("summary", "user_id", "total").
 		Raw(fmt.Sprintf("WITH summary AS (%s) SELECT user_id, total FROM summary WHERE total > ?", cteSQL), append(cteArgs, 1000)...) // injects entire CTE with final condition
 
@@ -379,12 +377,12 @@ func TestWithCTE(t *testing.T) {
 }
 
 func TestExistsClause(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	sub := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	sub := NewQueryBuilder(opt).
 		Select("orders", "1").Where("orders.user_id = users.id")
 	subSQL, subArgs := sub.Build()
 
-	q := NewQueryBuilder(opts).
+	q := NewQueryBuilder(opt).
 		Select("users", "id", "email").
 		Where(fmt.Sprintf("EXISTS (%s)", subSQL), subArgs...)
 
@@ -400,8 +398,8 @@ func TestExistsClause(t *testing.T) {
 }
 
 func TestMultiRowInsert(t *testing.T) {
-	opts := provider.Options{Driver: provider.MySQLDatabaseProviderName}
-	builder := NewQueryBuilder(opts)
+	opt := &Options{Driver: MySQLDatabaseProviderName}
+	builder := NewQueryBuilder(opt)
 	values := []any{"john@example.com", "doe@example.com"}
 	placeholders := []string{"(?)", "(?)"} // simulated
 
@@ -418,9 +416,9 @@ func TestMultiRowInsert(t *testing.T) {
 }
 
 func TestTransactionalQuery(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	start := NewQueryBuilder(opts).Raw("BEGIN")
-	commit := NewQueryBuilder(opts).Raw("COMMIT")
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	start := NewQueryBuilder(opt).Raw("BEGIN")
+	commit := NewQueryBuilder(opt).Raw("COMMIT")
 
 	s1, _ := start.Build()
 	s2, _ := commit.Build()
@@ -434,8 +432,8 @@ func TestTransactionalQuery(t *testing.T) {
 }
 
 func TestWindowFunction(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	q := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	q := NewQueryBuilder(opt).
 		Select("orders", "id", "amount", "RANK() OVER (PARTITION BY customer_id ORDER BY amount DESC) AS rank")
 
 	sql, _ := q.Build()
@@ -447,8 +445,8 @@ func TestWindowFunction(t *testing.T) {
 }
 
 func TestExportAsJSON(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	builder := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	builder := NewQueryBuilder(opt).
 		Select("users", "id", "email").
 		Where("email = ?", "test@example.com")
 
@@ -465,8 +463,8 @@ func TestExportAsJSON(t *testing.T) {
 }
 
 func TestExportAsXML(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	builder := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	builder := NewQueryBuilder(opt).
 		Select("users", "id", "email").
 		Where("email = ?", "john@example.com")
 
@@ -483,8 +481,8 @@ func TestExportAsXML(t *testing.T) {
 }
 
 func TestExportAsYaml(t *testing.T) {
-	opts := provider.Options{Driver: provider.PostgresSQLDatabaseProviderName}
-	builder := NewQueryBuilder(opts).
+	opt := &Options{Driver: PostgresSQLDatabaseProviderName}
+	builder := NewQueryBuilder(opt).
 		Select("users", "id", "email").
 		Where("email = ?", "john@example.com")
 
