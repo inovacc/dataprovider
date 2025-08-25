@@ -24,6 +24,10 @@ The dataprovider in `memory` and `sqlite` uses `modernc.org/sqlite` package that
 
 ## Supported databases
 
+For a project-wide analysis and suggestions, see IMPROVEMENTS.md.
+
+For a production-ready GORM read/write splitting guide (1 master, N replicas), see GORM_READ_WRITE.md.
+
 - [x] Memory
 - [x] SQLite3
 - [x] MySQL

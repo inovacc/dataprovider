@@ -6,5 +6,19 @@ tasks:
   test:
     cmds:
       - golangci-lint fmt
-      - go test -race -p=1 ./... -v
-      - golangci-lint run ./...
+      - golangci-lint run
+      - go test -race -p=1 ./...
+      - go test -race -v -bench=. -benchmem ./...
+
+  upgrade:
+    cmds:
+      - go get -u ./...
+      - go mod tidy -v
+
+  build-dev:
+    cmds:
+      - goreleaser build --snapshot --clean
+
+  build-prod:
+    cmds:
+      - goreleaser --snapshot --skip-publish --rm-dist
